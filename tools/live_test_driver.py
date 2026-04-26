@@ -95,10 +95,7 @@ def regenerate_results_md() -> str:
     Returns the markdown body (also writes it to disk).
     """
     # Compute summary
-    pass_count = 0
-    fail_count = 0
-    deferred_count = 0
-    not_run_count = 0
+    counts = {"PASS": 0, "FAIL": 0, "DEFERRED": 0, "BLOCKED": 0, "NOT RUN": 0}
     statuses = {}
     for row in LIVE_TEST_ROWS:
         result_path = LIVE_RESULTS / f"row{row.row_number:02d}.json"
@@ -107,46 +104,34 @@ def regenerate_results_md() -> str:
             explicit = data.get("result")
             row_count = data.get("rows")
             if explicit == "PASS" or (explicit is None and row_count and row_count > 0):
-                pass_count += 1
                 statuses[row.row_number] = "PASS"
-            elif explicit == "FAIL":
-                fail_count += 1
-                statuses[row.row_number] = "FAIL"
-            elif explicit == "DEFERRED":
-                deferred_count += 1
-                statuses[row.row_number] = "DEFERRED"
+            elif explicit in ("FAIL", "DEFERRED", "BLOCKED"):
+                statuses[row.row_number] = explicit
             else:
                 statuses[row.row_number] = "UNKNOWN"
         else:
-            not_run_count += 1
             statuses[row.row_number] = "NOT RUN"
+        counts[statuses[row.row_number]] = counts.get(statuses[row.row_number], 0) + 1
+
+    summary = ", ".join(f"{n} {k}" for k, n in counts.items() if n > 0)
 
     lines = [
         "# Live-test results\n",
         "",
-        f"**Summary:** {pass_count} PASS, {fail_count} FAIL, {deferred_count} DEFERRED, {not_run_count} NOT RUN out of {len(LIVE_TEST_ROWS)} rows.",
+        f"**Summary:** {summary} out of {len(LIVE_TEST_ROWS)} rows.",
         "",
         "| # | Skill | Auth | Notebook | Status | Rows | Last run (UTC) |",
         "|---|---|---|---|---|---|---|",
     ]
     for row in LIVE_TEST_ROWS:
         result_path = LIVE_RESULTS / f"row{row.row_number:02d}.json"
+        status = statuses.get(row.row_number, "NOT RUN")
         if result_path.exists():
             data = json.loads(result_path.read_text())
-            explicit = data.get("result")
             row_count = data.get("rows")
-            if explicit:
-                status = explicit
-            elif row_count is None:
-                status = "UNKNOWN"
-            elif row_count > 0:
-                status = "PASS"
-            else:
-                status = "EMPTY"
             rows = row_count if row_count is not None else "-"
             ts = data.get("timestamp_utc", "-")
         else:
-            status = "NOT RUN"
             rows = "-"
             ts = "-"
         lines.append(

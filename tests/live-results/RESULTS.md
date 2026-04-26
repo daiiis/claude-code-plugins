@@ -1,7 +1,7 @@
 # Live-test results
 
 
-**Summary:** 6 PASS, 0 FAIL, 1 DEFERRED, 7 NOT RUN out of 15 rows.
+**Summary:** 6 PASS, 1 DEFERRED, 1 BLOCKED, 7 NOT RUN out of 15 rows.
 
 | # | Skill | Auth | Notebook | Status | Rows | Last run (UTC) |
 |---|---|---|---|---|---|---|

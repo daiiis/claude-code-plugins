@@ -16,38 +16,48 @@ The catch-all skill for any DB with a JDBC driver. Skips the AIDP `aidataplatfor
 - For Postgres / MySQL / SQL Server / Oracle → use the dedicated skill. The `aidataplatform` format gives the connector pushdown and connection pooling that this skill doesn't.
 - For Snowflake → [`aidp-snowflake`](../aidp-snowflake/SKILL.md). The Spark connector is much better than raw JDBC.
 
-## Cluster prerequisite — install the JDBC JAR
+## Two ways to load a non-bundled JDBC driver
 
-For non-bundled drivers (SQLite, ClickHouse, etc.), upload the driver JAR to a Volume and attach via the cluster's Library tab. For ad-hoc runs, pass via `spark.jars`:
+### Option A — Runtime-load (recommended; no cluster restart) ★ live-validated
 
-```python
-# Ad-hoc only — for repeatable use, attach via cluster Library tab.
-spark = (SparkSession.builder
-         .config("spark.jars", "/Volumes/default/default/jars/sqlite-jdbc-3.46.0.0.jar")
-         .getOrCreate())
-```
-
-## Read (SQLite example from the official sample)
+The plugin ships a helper that loads a JDBC JAR into a running Spark session via Java's URLClassLoader + DriverManager. It works without admin access and without restarting the kernel. Live-validated on the AIDP `tpcds` cluster (Spark 3.5.0) — see `tests/live-results/row24.json`.
 
 ```python
 import os
+from oracle_ai_data_platform_connectors.jdbc import (
+    add_jdbc_jar_at_runtime, download_jdbc_jar,
+)
 
-JDBC_URL = "jdbc:sqlite:memory:myDb"
-DRIVER   = "org.sqlite.JDBC"
+# Download once (Maven Central is reachable from AIDP clusters)
+jar = download_jdbc_jar(
+    maven_url="https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.46.0.0/sqlite-jdbc-3.46.0.0.jar",
+    target_path="/tmp/sqlite-jdbc-3.46.0.0.jar",
+)
 
-properties = {
-    "driver":    DRIVER,
-    "user":      os.environ.get("CUST_DB_USER", ""),
-    "password":  os.environ.get("CUST_DB_PASSWORD", ""),
-    "fetchsize": "1000",
-}
+# Register with the running Spark session
+add_jdbc_jar_at_runtime(spark, jar_path=jar, driver_class="org.sqlite.JDBC")
 
+# Now standard Spark JDBC works
 df = (spark.read.format("jdbc")
-      .options(**properties)
-      .option("url", JDBC_URL)
-      .option("dbtable", "(SELECT 1 AS c1, 2 AS c2)")
+      .option("url",      "jdbc:sqlite::memory:")
+      .option("driver",   "org.sqlite.JDBC")
+      .option("dbtable",  "(SELECT 1 AS c1, 2 AS c2, 3 AS c3)")
+      .option("fetchsize","1000")
       .load())
 df.show()
+```
+
+The helper is implemented at [scripts/oracle_ai_data_platform_connectors/jdbc/runtime_load.py](../../scripts/oracle_ai_data_platform_connectors/jdbc/runtime_load.py) — internally it builds a URLClassLoader rooted at the existing thread context loader, calls `DriverManager.registerDriver`, and sets the JVM thread context class loader so Spark's `Utils.classForName` resolves the driver class.
+
+### Option B — Cluster Library tab (durable, requires admin)
+
+For frequently-used drivers, upload the JAR to a Volume and attach via the cluster Library tab. This persists across cluster restarts. Requires cluster admin access. After attach + restart:
+
+```python
+# Driver class is now on the system classpath; no runtime trick needed.
+df = (spark.read.format("jdbc")
+      .option("url", JDBC_URL).option("driver", DRIVER)
+      .option("dbtable", TABLE).load())
 ```
 
 ## Generic template

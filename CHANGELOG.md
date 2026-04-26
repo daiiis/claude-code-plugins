@@ -10,6 +10,16 @@ All notable changes to this plugin are documented here. The format follows [Keep
 - Python helper package `oracle_ai_data_platform_connectors` with `auth/`, `jdbc/`, `rest/`, `streaming/` submodules + new top-level `aidataplatform` module exposing `aidataplatform_options()` for the AIDP `aidataplatform` Spark format handler (covers ORACLE_DB, ORACLE_EXADATA, ORACLE_ALH, ORACLE_ATP, POSTGRESQL, MYSQL, MYSQL_HEATWAVE, SQLSERVER, HIVE, KAFKA, FUSION_BICC, GENERIC_REST).
 - Phase 0 auth-strategy research findings folded into skill defaults.
 - **v0.2.0 — official Oracle AIDP samples audit.** Added 12 new skills covering every distinct connector / data source documented in `oracle-samples/oracle-aidp-samples`: PostgreSQL, MySQL/HeatWave, SQL Server, generic Oracle DB (Compute/on-prem/Base DB), OCI Object Storage native, Apache Iceberg, Snowflake, Azure ADLS Gen2, AWS S3, Generic REST, custom JDBC escape hatch, Excel. Each skill has a SKILL.md with verbatim option shapes from the official sample notebooks. 12 new example notebooks added to `examples/`. Routing skill `aidp-connectors-overview` updated with new triggers. New unit-test suite `test_aidataplatform.py` (15 tests) covers the helper.
+- **v0.3.0 — quick-wins live-validated + two new helpers for PyPI-isolated clusters.**
+  - **Live tests** (rows 14, 19, 24, 25 flipped to PASS on the AIDP `tpcds` cluster, Spark 3.5.0):
+    - Row 14 (`aidp-object-storage`): 3-row CSV roundtrip on the workspace-managed OCI bucket; implicit IAM auth.
+    - Row 19 (`aidp-iceberg`): registered an Iceberg Hadoop catalog on `oci://`, created a partitioned table, wrote 4 rows, queried snapshots — Iceberg JAR is pre-installed on AIDP clusters.
+    - Row 24 (`aidp-jdbc-custom`): in-memory SQLite via a NEW runtime-load helper; no cluster restart needed.
+    - Row 25 (`aidp-excel`): 5-row .xlsx parsed via a NEW stdlib-only parser; no openpyxl, no Crealytics JAR.
+  - **New helper: `oracle_ai_data_platform_connectors.jdbc.runtime_load`** with `add_jdbc_jar_at_runtime(spark, jar_path, driver_class)` and `download_jdbc_jar(maven_url, target_path)`. Lifts the URLClassLoader + DriverManager.registerDriver + Thread.setContextClassLoader pattern that lets users install custom JDBC JARs in a running Spark session without admin access. `aidp-jdbc-custom` SKILL.md leads with this as Option A; cluster Library tab demoted to Option B.
+  - **New helper: `oracle_ai_data_platform_connectors.excel.read_xlsx_stdlib`** — pure-Python stdlib `.xlsx` parser using `zipfile` + `xml.etree.ElementTree`. No openpyxl, no JARs. `aidp-excel` SKILL.md adds this as Option C, the only path that works on AIDP clusters that have neither PyPI access nor the Crealytics dependency closure.
+  - Live-test scoreboard: 12 PASS / 1 DEFERRED / 10 NOT RUN out of 23 rows.
+  - Package version bumped 0.2.0 → 0.3.0.
 
 ### Changed
 - **Removed `aidp-atp` as a separate skill.** ATP, ADW, and ALH are all Oracle 26ai under the hood; the same JDBC driver, URL pattern, wallet flow, and IAM DB-Token flow apply to all three. `aidp-alh` now covers the entire Autonomous DB family.

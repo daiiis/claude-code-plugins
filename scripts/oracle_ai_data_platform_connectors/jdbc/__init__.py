@@ -10,6 +10,10 @@ from .hive import (
     build_hive_jdbc_url,
     spark_hive_jdbc_options,
 )
+from .runtime_load import (
+    add_jdbc_jar_at_runtime,
+    download_jdbc_jar,
+)
 
 __all__ = [
     "build_oracle_jdbc_url",
@@ -18,4 +22,6 @@ __all__ = [
     "spark_jdbc_options_password",
     "build_hive_jdbc_url",
     "spark_hive_jdbc_options",
+    "add_jdbc_jar_at_runtime",
+    "download_jdbc_jar",
 ]

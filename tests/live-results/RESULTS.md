@@ -1,7 +1,7 @@
 # Live-test results
 
 
-**Summary:** 4 PASS, 0 FAIL, 1 DEFERRED, 12 NOT RUN out of 17 rows.
+**Summary:** 5 PASS, 0 FAIL, 1 DEFERRED, 11 NOT RUN out of 17 rows.
 
 | # | Skill | Auth | Notebook | Status | Rows | Last run (UTC) |
 |---|---|---|---|---|---|---|
@@ -21,4 +21,4 @@
 | 13 | `aidp-epm-cloud` | Basic (legacy tenancy.user@domain) | [`epm_planning_basic.ipynb`](../../examples/epm_planning_basic.ipynb) | PASS | 1 | 1777213859 |
 | 14 | `aidp-essbase` | HTTP Basic | [`essbase_mdx_basic.ipynb`](../../examples/essbase_mdx_basic.ipynb) | NOT RUN | - | - |
 | 15 | `aidp-streaming-kafka` | SASL_SSL OAuth | [`kafka_streaming_oauth.ipynb`](../../examples/kafka_streaming_oauth.ipynb) | NOT RUN | - | - |
-| 16 | `aidp-streaming-kafka` | SASL/PLAIN with API Key | [`kafka_streaming_apikey.ipynb`](../../examples/kafka_streaming_apikey.ipynb) | NOT RUN | - | - |
+| 16 | `aidp-streaming-kafka` | SASL/PLAIN with API Key | [`kafka_streaming_apikey.ipynb`](../../examples/kafka_streaming_apikey.ipynb) | PASS | 3 | 1777217508 |

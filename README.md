@@ -4,13 +4,13 @@ A Claude Code plugin that ships model-invokable skills for connecting to every m
 
 ## What's in here
 
-Nine connector skills, plus one routing skill:
+Eight connector skills, one bootstrap skill, one routing skill:
 
 | Skill | Target | Transport | Recommended auth |
 |---|---|---|---|
 | `aidp-connectors-overview` | (router) | — | — |
-| `aidp-alh` | Oracle AI Lakehouse | Spark JDBC | Wallet (mTLS) |
-| `aidp-atp` | Autonomous DB | Spark JDBC | Wallet (mTLS) |
+| `aidp-connectors-bootstrap` | one-time setup | — | — |
+| `aidp-alh` | Oracle Autonomous DB family (ALH, ADW, ATP) | Spark JDBC | Wallet (mTLS) |
 | `aidp-exacs` | Exadata Cloud Service | Spark JDBC (TCPS) | Wallet |
 | `aidp-bds-hive` | Big Data Service HiveServer2 | Spark JDBC (Hive) | LDAP |
 | `aidp-fusion-rest` | Fusion ERP/HCM/SCM | REST → DataFrame | HTTP Basic |

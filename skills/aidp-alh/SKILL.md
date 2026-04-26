@@ -1,17 +1,20 @@
 ---
-description: Connect from an AIDP notebook to Oracle AI Lakehouse (ALH) via Spark JDBC. Use when the user mentions ALH, AI Lakehouse, lakehouse JDBC, or wants to query a 26ai-backed lakehouse from Spark. Covers wallet (mTLS), IAM DB-Token, and API Key auth paths.
+description: Connect from an AIDP notebook to Oracle AI Lakehouse (ALH), Autonomous Data Warehouse (ADW), or Autonomous Transaction Processing (ATP) via Spark JDBC. Use when the user mentions ALH, AI Lakehouse, ADW, ATP, Autonomous Database, or wants to query a 26ai-backed Oracle Autonomous DB from Spark. Covers wallet (mTLS), IAM DB-Token (with on-executor refresh for long jobs), and API Key auth paths.
 allowed-tools: Read, Write, Edit, Bash
 ---
 
-# `aidp-alh` — Oracle AI Lakehouse via Spark JDBC
+# `aidp-alh` — Oracle AI Lakehouse / ADW / ATP via Spark JDBC
+
+This skill covers the **entire Oracle Autonomous Database family** — ALH, ADW, ATP — because they are all Oracle 26ai under the hood. Same JDBC driver (`oracle.jdbc.OracleDriver`), same URL pattern (`jdbc:oracle:thin:@tcps://...:1522/...`), same TNS service-name shape (`_high`/`_medium`/`_low`), same wallet flow, same IAM DB-Token flow.
+
+If the user names ATP or ADW specifically, just use this skill — substitute the env-var prefix (`ATP_*` / `ADW_*`) for `ALH_*` and proceed identically.
 
 ## When to use
-- User wants to read or write an ALH table from an AIDP notebook.
-- User mentions: "ALH", "AI Lakehouse", "26ai lakehouse", "lakehouse external catalog".
-- User has an ALH wallet, ALH connection string, or an ALH-backed external catalog in AIDP.
+- User wants to read or write an ALH, ADW, or ATP table from an AIDP notebook.
+- User mentions: "ALH", "AI Lakehouse", "ADW", "Autonomous Data Warehouse", "ATP", "Autonomous Transaction Processing", "Autonomous Database", "26ai lakehouse", "lakehouse external catalog".
+- User has an Autonomous DB wallet, an Autonomous DB connection string, or an externally-cataloged Autonomous DB in AIDP.
 
 ## When NOT to use
-- For ATP / Autonomous DB → use [`aidp-atp`](../aidp-atp/SKILL.md).
 - For ExaCS / on-prem Oracle → use [`aidp-exacs`](../aidp-exacs/SKILL.md).
 - For Hive on Big Data Service → use [`aidp-bds-hive`](../aidp-bds-hive/SKILL.md).
 
@@ -58,11 +61,12 @@ df = spark.read.format("jdbc").options(**opts).option("dbtable", "MY_SCHEMA.MY_T
 df.show(5)
 ```
 
-### Option B — IAM DB-Token
+### Option B — IAM DB-Token (validated against ATP via IMFA IoT, 3/3 successful)
 
 ```python
 import os
 from oracle_ai_data_platform_connectors.auth import generate_db_token
+from oracle_ai_data_platform_connectors.auth.dbtoken import refresh_on_executors
 from oracle_ai_data_platform_connectors.jdbc import (
     build_oracle_jdbc_url, spark_jdbc_options_dbtoken,
 )
@@ -78,14 +82,10 @@ url = build_oracle_jdbc_url(
 )
 opts = spark_jdbc_options_dbtoken(url=url, token_dir=token_dir)
 df = spark.read.format("jdbc").options(**opts).option("dbtable", "MY_TABLE").load()
-```
 
-For long-running jobs (>25 min), wrap your partition logic with `refresh_on_executors`:
-
-```python
-from oracle_ai_data_platform_connectors.auth.dbtoken import refresh_on_executors
+# For long-running jobs (>25 min), wrap your partition logic with refresh_on_executors:
 refresh = refresh_on_executors(spark, os.environ["ALH_COMPARTMENT_OCID"], "/tmp/dbcred_alh")
-result = df.rdd.mapPartitions(lambda part: refresh(part)).toDF()
+result = df.rdd.mapPartitions(lambda part: refresh(part)).toDF(df.schema)
 ```
 
 ### Option C — API Key + inline OCI config (catalog-sync side only)

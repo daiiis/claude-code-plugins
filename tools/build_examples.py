@@ -176,96 +176,6 @@ def alh_catalog_sync_apikey() -> List[dict]:
     ]
 
 
-def atp_wallet_query() -> List[dict]:
-    return [
-        md(
-            "# `aidp-atp` live test — wallet (mTLS)\n",
-            "\n",
-            "**Live-test row 4.** Already-validated pattern from prior IMFA work.\n",
-        ),
-        sys_path_setup(),
-        code(
-            "from oracle_ai_data_platform_connectors.auth import write_wallet_to_tmp\n",
-            "from oracle_ai_data_platform_connectors.jdbc import build_oracle_jdbc_url, spark_jdbc_options_wallet\n",
-            "\n",
-            "tns_admin = write_wallet_to_tmp(os.environ['ATP_WALLET_ZIP_PATH'], target_dir='/tmp/wallet/atp')\n",
-            "url = build_oracle_jdbc_url(tns_alias=os.environ['ATP_TNS_SERVICE'], tns_admin=tns_admin)\n",
-            "opts = spark_jdbc_options_wallet(url=url, user=os.environ['ATP_USER'], password=os.environ['ATP_PASSWORD'])\n",
-        ),
-        code(
-            "df = spark.read.format('jdbc').options(**opts).option('dbtable', os.environ['ATP_TABLE_FOR_TEST']).load()\n",
-            "df.show(5)\n",
-        ),
-        emit_summary("aidp-atp", "wallet"),
-    ]
-
-
-def atp_dbtoken_refresh() -> List[dict]:
-    return [
-        md(
-            "# `aidp-atp` live test — IAM DB-Token + on-executor refresh\n",
-            "\n",
-            "**Live-test row 5.** Long-running pattern. Pass criteria: zero auth failures over a >25-minute job (token refresh kicks in on each executor).\n",
-        ),
-        sys_path_setup(),
-        code(
-            "from oracle_ai_data_platform_connectors.auth import generate_db_token\n",
-            "from oracle_ai_data_platform_connectors.auth.dbtoken import refresh_on_executors\n",
-            "from oracle_ai_data_platform_connectors.jdbc import build_oracle_jdbc_url, spark_jdbc_options_dbtoken\n",
-            "\n",
-            "token_dir = generate_db_token(os.environ['ATP_COMPARTMENT_OCID'], target_dir='/tmp/dbcred_atp')\n",
-            "url = build_oracle_jdbc_url(\n",
-            "    tns_alias=os.environ['ATP_TNS_SERVICE'],\n",
-            "    tns_admin=os.environ.get('ATP_WALLET_PATH', '/tmp/wallet/atp'),\n",
-            ")\n",
-            "opts = spark_jdbc_options_dbtoken(url=url, token_dir=token_dir)\n",
-        ),
-        code(
-            "# Driver-side query first (sanity check)\n",
-            "df = spark.read.format('jdbc').options(**opts).option('dbtable', os.environ['ATP_TABLE_FOR_TEST']).load()\n",
-            "\n",
-            "# Then long-running mapPartitions with token refresh — for live tests, count rows\n",
-            "# per partition (cheap proxy for 'we held a JDBC connection long enough')\n",
-            "refresh = refresh_on_executors(spark, os.environ['ATP_COMPARTMENT_OCID'], '/tmp/dbcred_atp')\n",
-            "result = df.rdd.mapPartitions(lambda part: refresh(part)).toDF(df.schema)\n",
-            "print('result rows:', result.count())\n",
-        ),
-        emit_summary("aidp-atp", "dbtoken", df_var="result"),
-    ]
-
-
-def atp_admin_apikey() -> List[dict]:
-    return [
-        md(
-            "# `aidp-atp` live test — API Key + inline OCI config (admin)\n",
-            "\n",
-            "**Live-test row 6.** Confirms the inline-PEM OCI config path works for admin-only Database service calls (e.g. listing autonomous databases in a compartment).\n",
-        ),
-        sys_path_setup(),
-        code(
-            "from oracle_ai_data_platform_connectors.auth import from_inline_pem\n",
-            "import oci\n",
-            "\n",
-            "config = from_inline_pem(\n",
-            "    user_ocid=os.environ['OCI_USER_OCID'],\n",
-            "    tenancy_ocid=os.environ['OCI_TENANCY_OCID'],\n",
-            "    fingerprint=os.environ['OCI_FINGERPRINT'],\n",
-            "    private_key_pem=os.environ['OCI_PRIVATE_KEY_PEM'],\n",
-            "    region=os.environ['OCI_REGION'],\n",
-            ")\n",
-            "db_client = oci.database.DatabaseClient(config=config)\n",
-            "adbs = db_client.list_autonomous_databases(os.environ['ATP_COMPARTMENT_OCID']).data\n",
-            "print('autonomous DBs visible:', len(adbs))\n",
-        ),
-        code(
-            "import pandas as pd\n",
-            "df = spark.createDataFrame(pd.DataFrame([{'name': adb.display_name, 'state': adb.lifecycle_state} for adb in adbs]))\n",
-            "df.show()\n",
-        ),
-        emit_summary("aidp-atp", "apikey-admin"),
-    ]
-
-
 def exacs_wallet_query() -> List[dict]:
     return [
         md(
@@ -750,9 +660,6 @@ NOTEBOOKS = [
     ("alh_wallet_query", alh_wallet_query),
     ("alh_dbtoken_query", alh_dbtoken_query),
     ("alh_catalog_sync_apikey", alh_catalog_sync_apikey),
-    ("atp_wallet_query", atp_wallet_query),
-    ("atp_dbtoken_refresh", atp_dbtoken_refresh),
-    ("atp_admin_apikey", atp_admin_apikey),
     ("exacs_wallet_query", exacs_wallet_query),
     ("exacs_dbtoken_query", exacs_dbtoken_query),
     ("exacs_user_password", exacs_user_password),

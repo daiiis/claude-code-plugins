@@ -21,8 +21,7 @@ Otherwise, pick the right skill from this table and **invoke that skill**. Don't
 
 | User says... | Use skill |
 |---|---|
-| "ALH", "AI Lakehouse", "26ai lakehouse", "external catalog from lakehouse" | [`aidp-alh`](../aidp-alh/SKILL.md) |
-| "ATP", "ADW", "Autonomous Database", "autonomous transaction processing" | [`aidp-atp`](../aidp-atp/SKILL.md) |
+| "ALH", "AI Lakehouse", "ADW", "ATP", "Autonomous Database", "Autonomous Data Warehouse", "Autonomous Transaction Processing", "26ai", "external catalog from lakehouse" | [`aidp-alh`](../aidp-alh/SKILL.md) — covers the entire Autonomous DB family |
 | "ExaCS", "Exadata", "Exadata Cloud", "private-subnet Oracle DB" | [`aidp-exacs`](../aidp-exacs/SKILL.md) |
 | "BDS", "Big Data Service", "Hive", "HiveServer2", "Hadoop on OCI" | [`aidp-bds-hive`](../aidp-bds-hive/SKILL.md) |
 | "Fusion ERP", "Fusion HCM", "Fusion REST", "FA REST", "Cloud ERP API" | [`aidp-fusion-rest`](../aidp-fusion-rest/SKILL.md) |

@@ -11,7 +11,7 @@ Eight connector skills, one bootstrap skill, one routing skill:
 | `aidp-connectors-overview` | (router) | — | — |
 | `aidp-connectors-bootstrap` | one-time setup | — | — |
 | `aidp-alh` | Oracle Autonomous DB family (ALH, ADW, ATP) | Spark JDBC | Wallet (mTLS) |
-| `aidp-exacs` | Exadata Cloud Service | Spark JDBC (TCPS) | Wallet |
+| `aidp-exacs` | Exadata Cloud Service | Spark JDBC (TCP 1521 + NNE AES256) | Plain user/password |
 | `aidp-bds-hive` | Big Data Service HiveServer2 | Spark JDBC (Hive) | LDAP |
 | `aidp-fusion-rest` | Fusion ERP/HCM/SCM | REST → DataFrame | HTTP Basic only |
 | `aidp-fusion-bicc` | Fusion BICC extracts | OCI Object Storage CSV → Spark | HTTP Basic + API key |

@@ -176,57 +176,6 @@ def alh_catalog_sync_apikey() -> List[dict]:
     ]
 
 
-def exacs_wallet_query() -> List[dict]:
-    return [
-        md(
-            "# `aidp-exacs` live test — wallet (TCPS)\n",
-            "**Live-test row 4.**\n",
-        ),
-        sys_path_setup(),
-        code(
-            "from oracle_ai_data_platform_connectors.auth import write_wallet_to_tmp\n",
-            "from oracle_ai_data_platform_connectors.jdbc import build_oracle_jdbc_url, spark_jdbc_options_wallet\n",
-            "\n",
-            "write_wallet_to_tmp(os.environ['EXACS_WALLET_ZIP_PATH'], target_dir='/tmp/wallet/exacs')\n",
-            "url = build_oracle_jdbc_url(\n",
-            "    host=os.environ['EXACS_HOST'],\n",
-            "    port=int(os.environ.get('EXACS_PORT', '1522')),\n",
-            "    service_name=os.environ['EXACS_SERVICE_NAME'],\n",
-            "    use_tcps=True,\n",
-            ")\n",
-            "opts = spark_jdbc_options_wallet(url=url, user=os.environ['EXACS_USER'], password=os.environ['EXACS_PASSWORD'])\n",
-        ),
-        code(
-            "df = spark.read.format('jdbc').options(**opts).option('dbtable', os.environ['EXACS_TABLE_FOR_TEST']).load()\n",
-            "df.show(5)\n",
-        ),
-        emit_summary("aidp-exacs", "wallet"),
-    ]
-
-
-def exacs_dbtoken_query() -> List[dict]:
-    return [
-        md(
-            "# `aidp-exacs` live test — IAM DB-Token (only IAM-enabled clusters)\n",
-            "**Live-test row 5.** Skip if the cluster is on classic auth.\n",
-        ),
-        sys_path_setup(),
-        code(
-            "from oracle_ai_data_platform_connectors.auth import generate_db_token\n",
-            "from oracle_ai_data_platform_connectors.jdbc import build_oracle_jdbc_url, spark_jdbc_options_dbtoken\n",
-            "\n",
-            "token_dir = generate_db_token(os.environ['EXACS_COMPARTMENT_OCID'], target_dir='/tmp/dbcred_exacs')\n",
-            "url = build_oracle_jdbc_url(host=os.environ['EXACS_HOST'], port=1522, service_name=os.environ['EXACS_SERVICE_NAME'])\n",
-            "opts = spark_jdbc_options_dbtoken(url=url, token_dir=token_dir)\n",
-        ),
-        code(
-            "df = spark.read.format('jdbc').options(**opts).option('dbtable', os.environ['EXACS_TABLE_FOR_TEST']).load()\n",
-            "df.show(5)\n",
-        ),
-        emit_summary("aidp-exacs", "dbtoken"),
-    ]
-
-
 def exacs_user_password() -> List[dict]:
     return [
         md(
@@ -625,8 +574,6 @@ NOTEBOOKS = [
     ("alh_wallet_query", alh_wallet_query),
     ("alh_dbtoken_query", alh_dbtoken_query),
     ("alh_catalog_sync_apikey", alh_catalog_sync_apikey),
-    ("exacs_wallet_query", exacs_wallet_query),
-    ("exacs_dbtoken_query", exacs_dbtoken_query),
     ("exacs_user_password", exacs_user_password),
     ("bds_hive_kerberos", bds_hive_kerberos),
     ("bds_hive_ldap", bds_hive_ldap),

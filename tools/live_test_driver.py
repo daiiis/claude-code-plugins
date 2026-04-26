@@ -50,9 +50,8 @@ LIVE_TEST_ROWS = [
     LiveTestRow(1,  "aidp-alh",            "Wallet (mTLS)",                     "alh_wallet_query.ipynb",         "Spark DataFrame with non-zero rows from a known ALH/ADW/ATP table", True),
     LiveTestRow(2,  "aidp-alh",            "IAM DB-Token (>25 min refresh)",     "alh_dbtoken_query.ipynb",        "Same query via DB-token, on-executor refresh, zero auth failures", True),
     LiveTestRow(3,  "aidp-alh",            "API Key + inline OCI config",        "alh_catalog_sync_apikey.ipynb",  "External-catalog metadata refresh succeeds; downstream Spark read", False),
-    LiveTestRow(4,  "aidp-exacs",          "Wallet (TCPS)",                      "exacs_wallet_query.ipynb",       "Non-zero rows over TCPS port 1522",                                False),
-    LiveTestRow(5,  "aidp-exacs",          "IAM DB-Token",                       "exacs_dbtoken_query.ipynb",      "Same query via DB-token; skip if cluster not IAM-enabled",         False),
-    LiveTestRow(6,  "aidp-exacs",          "Legacy DB user/password",            "exacs_user_password.ipynb",      "Same query via classic credentials",                               False),
+    # Rows 4 and 5 (ExaCS Wallet TCPS / IAM DB-Token) were removed: neither is supported by AIDP notebooks for ExaCS.
+    LiveTestRow(6,  "aidp-exacs",          "Plain user/pwd on TCP 1521 + NNE AES256", "exacs_user_password.ipynb",  "Spark JDBC connect; AES256 NNE confirmed via v$session_connect_info", False),
     LiveTestRow(7,  "aidp-bds-hive",       "Kerberos keytab",                    "bds_hive_kerberos.ipynb",        "kinit succeeds, Hive JDBC SHOW TABLES returns rows",               False),
     LiveTestRow(8,  "aidp-bds-hive",       "LDAP",                               "bds_hive_ldap.ipynb",            "Same query via LDAP bind",                                         False),
     LiveTestRow(9,  "aidp-fusion-rest",    "HTTP Basic",                         "fusion_rest_basic.ipynb",        "<=499-row paged fetch lands as Spark DataFrame",                   True),

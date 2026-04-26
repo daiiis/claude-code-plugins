@@ -1,7 +1,9 @@
 # Live-test results
 
 
-**Summary:** 8 PASS, 1 DEFERRED, 5 NOT RUN out of 14 rows.
+**Summary:** 8 PASS, 1 DEFERRED, 3 NOT RUN out of 12 rows.
+
+Row IDs 4 (ExaCS Wallet TCPS) and 5 (ExaCS IAM DB-Token) were removed — neither is supported by AIDP notebooks for ExaCS clusters. ExaCS is now single-auth: row 6 (plain user/pwd on TCP 1521 + NNE).
 
 | # | Skill | Auth | Notebook | Status | Rows | Last run (UTC) |
 |---|---|---|---|---|---|---|
@@ -9,8 +11,6 @@
 | 1 | `aidp-alh` | Wallet (mTLS) | [`alh_wallet_query.ipynb`](../../examples/alh_wallet_query.ipynb) | PASS | 1 | 1777214484 |
 | 2 | `aidp-alh` | IAM DB-Token (>25 min refresh) | [`alh_dbtoken_query.ipynb`](../../examples/alh_dbtoken_query.ipynb) | DEFERRED | - | None |
 | 3 | `aidp-alh` | API Key + inline OCI config | [`alh_catalog_sync_apikey.ipynb`](../../examples/alh_catalog_sync_apikey.ipynb) | NOT RUN | - | - |
-| 4 | `aidp-exacs` | Wallet (TCPS) | [`exacs_wallet_query.ipynb`](../../examples/exacs_wallet_query.ipynb) | NOT RUN | - | - |
-| 5 | `aidp-exacs` | IAM DB-Token | [`exacs_dbtoken_query.ipynb`](../../examples/exacs_dbtoken_query.ipynb) | NOT RUN | - | - |
 | 6 | `aidp-exacs` | Plain user/pwd on TCP 1521 + NNE AES256 | [`exacs_user_password.ipynb`](../../examples/exacs_user_password.ipynb) | PASS | - | None |
 | 7 | `aidp-bds-hive` | Kerberos keytab | [`bds_hive_kerberos.ipynb`](../../examples/bds_hive_kerberos.ipynb) | NOT RUN | - | - |
 | 8 | `aidp-bds-hive` | LDAP | [`bds_hive_ldap.ipynb`](../../examples/bds_hive_ldap.ipynb) | NOT RUN | - | - |

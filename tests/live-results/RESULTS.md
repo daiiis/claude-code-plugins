@@ -1,7 +1,7 @@
 # Live-test results
 
 
-**Summary:** 6 PASS, 1 DEFERRED, 1 BLOCKED, 7 NOT RUN out of 15 rows.
+**Summary:** 6 PASS, 1 DEFERRED, 1 BLOCKED, 6 NOT RUN out of 14 rows.
 
 | # | Skill | Auth | Notebook | Status | Rows | Last run (UTC) |
 |---|---|---|---|---|---|---|
@@ -18,5 +18,4 @@
 | 10 | `aidp-fusion-bicc` | HTTP Basic | [`fusion_bicc_to_dataframe.ipynb`](../../examples/fusion_bicc_to_dataframe.ipynb) | BLOCKED | - | None |
 | 11 | `aidp-epm-cloud` | Basic (tenancy.user@domain) | [`epm_planning_basic.ipynb`](../../examples/epm_planning_basic.ipynb) | PASS | 1 | 1777213859 |
 | 12 | `aidp-essbase` | HTTP Basic | [`essbase_mdx_basic.ipynb`](../../examples/essbase_mdx_basic.ipynb) | PASS | 2 | None |
-| 13 | `aidp-streaming-kafka` | SASL_SSL OAuth | [`kafka_streaming_oauth.ipynb`](../../examples/kafka_streaming_oauth.ipynb) | NOT RUN | - | - |
-| 14 | `aidp-streaming-kafka` | SASL/PLAIN with API Key | [`kafka_streaming_apikey.ipynb`](../../examples/kafka_streaming_apikey.ipynb) | PASS | 3 | 1777217508 |
+| 13 | `aidp-streaming-kafka` | SASL/PLAIN with OCI auth token | [`kafka_streaming_apikey.ipynb`](../../examples/kafka_streaming_apikey.ipynb) | PASS | 3 | 1777223131 |

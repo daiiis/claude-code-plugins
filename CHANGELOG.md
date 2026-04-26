@@ -12,8 +12,11 @@ All notable changes to this plugin are documented here. The format follows [Keep
 
 ### Changed
 - **Removed `aidp-atp` as a separate skill.** ATP, ADW, and ALH are all Oracle 26ai under the hood; the same JDBC driver, URL pattern, wallet flow, and IAM DB-Token flow apply to all three. `aidp-alh` now covers the entire Autonomous DB family.
-- **Dropped OAuth from `aidp-fusion-rest` and `aidp-epm-cloud` skills.** Both are HTTP Basic only. Removed Option B (OAuth/JWT client-credentials) sections, related env vars (`FUSION_OAUTH_*`, `EPM_OAUTH_*`), and the corresponding live-test rows + notebooks. `aidp-fusion-bicc` was always Basic + API key (verified).
-- Live-test matrix shrunk to 15 rows (was 17 after ATP drop, now 15 after 2 OAuth rows removed).
+- **Dropped OAuth from `aidp-fusion-rest` and `aidp-epm-cloud` skills.** Both are HTTP Basic only. Removed Option B (OAuth/JWT client-credentials) sections, related env vars (`FUSION_OAUTH_*`, `EPM_OAUTH_*`), and the corresponding live-test rows + notebooks.
+- **Dropped API-key requirement from `aidp-fusion-bicc`.** Skill is now Basic-only; the OCI Object Storage read uses cluster-level `oci://` auth, not user-supplied API keys.
+- **Dropped OAuthBearer from `aidp-streaming-kafka`.** Aligns with the official Oracle AIDP sample at `oracle-samples/oracle-aidp-samples` (`StreamingFromOCIStreamingService.ipynb`), which uses SASL/PLAIN only. Removed `build_kafka_options_oauthbearer` helper, OAuth notebook, and corresponding live-test row.
+- **Streaming helper enhancements** (matching official sample): `bootstrap_for_region()` now accepts an optional `cell` param for cell-prefixed bootstrap (`cell-N.streaming.<region>...`); `build_kafka_options_sasl_plain()` adds optional `max_partition_fetch_bytes` and `max_offsets_per_trigger` tuning kwargs.
+- Live-test matrix shrunk to 14 rows (was 17 after ATP drop, then 15 after 2 REST OAuth rows removed, now 14 after Kafka OAuthBearer removed).
 
 ## [0.1.0] — TBD
 

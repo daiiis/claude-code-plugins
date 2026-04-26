@@ -441,43 +441,11 @@ def essbase_mdx_basic() -> List[dict]:
     ]
 
 
-def kafka_streaming_oauth() -> List[dict]:
-    return [
-        md(
-            "# `aidp-streaming-kafka` live test — SASL_SSL OAuthBearer\n",
-            "**Live-test row 13.** Requires custom OAuthBearer callback handler JAR pre-attached to the cluster.\n",
-        ),
-        sys_path_setup(),
-        code(
-            "from oracle_ai_data_platform_connectors.streaming import (\n",
-            "    bootstrap_for_region, build_kafka_options_oauthbearer, validate_checkpoint_path,\n",
-            ")\n",
-            "\n",
-            "bootstrap = bootstrap_for_region(os.environ['OCI_REGION'])\n",
-            "opts = build_kafka_options_oauthbearer(\n",
-            "    bootstrap_servers=bootstrap,\n",
-            "    token_endpoint_url=os.environ['OCI_OAUTH_TOKEN_URL'],\n",
-            "    callback_handler_class=os.environ['KAFKA_OAUTH_CALLBACK_CLASS'],\n",
-            "    topic=os.environ['KAFKA_TOPIC'],\n",
-            ")\n",
-        ),
-        code(
-            "checkpoint = validate_checkpoint_path(os.environ['KAFKA_CHECKPOINT_VOLUME'])\n",
-            "raw = spark.readStream.format('kafka').options(**opts).load()\n",
-            "query = raw.writeStream.format('memory').queryName('kafka_oauth_test').option('checkpointLocation', checkpoint).start()\n",
-            "query.awaitTermination(timeout=60)\n",
-            "df = spark.sql('SELECT * FROM kafka_oauth_test')\n",
-            "print('input rows in last batch:', query.lastProgress.get('numInputRows'))\n",
-        ),
-        emit_summary("aidp-streaming-kafka", "oauthbearer"),
-    ]
-
-
 def kafka_streaming_apikey() -> List[dict]:
     return [
         md(
             "# `aidp-streaming-kafka` live test — SASL/PLAIN with OCI auth token\n",
-            "**Live-test row 14.** Recommended default. 1-hour token TTL.\n",
+            "**Live-test row 13.** Mirrors the official Oracle AIDP sample at `oracle-samples/oracle-aidp-samples` (`StreamingFromOCIStreamingService.ipynb`). 1-hour token TTL — refresh before long jobs.\n",
         ),
         sys_path_setup(),
         code(
@@ -489,21 +457,27 @@ def kafka_streaming_apikey() -> List[dict]:
             "opts = build_kafka_options_sasl_plain(\n",
             "    bootstrap_servers=bootstrap,\n",
             "    tenancy_name=os.environ['OCI_TENANCY_NAME'],\n",
-            "    username=os.environ['OCI_USERNAME'],\n",
+            "    username=os.environ['OCI_USERNAME'],     # 'oracleidentitycloudservice/<email>' for IAM-Domains\n",
             "    stream_pool_ocid=os.environ['OCI_STREAM_POOL_OCID'],\n",
             "    auth_token=os.environ['OCI_AUTH_TOKEN'],\n",
             "    topic=os.environ['KAFKA_TOPIC'],\n",
+            "    starting_offsets='earliest',\n",
+            "    max_partition_fetch_bytes=1024*1024,\n",
+            "    max_offsets_per_trigger=5,\n",
             ")\n",
         ),
         code(
             "checkpoint = validate_checkpoint_path(os.environ['KAFKA_CHECKPOINT_VOLUME'])\n",
             "raw = spark.readStream.format('kafka').options(**opts).load()\n",
-            "query = raw.writeStream.format('memory').queryName('kafka_apikey_test').option('checkpointLocation', checkpoint).start()\n",
+            "out_df = raw.selectExpr(\"CAST(key AS STRING) AS k\", \"CAST(value AS STRING) AS v\", \"topic\", \"partition\", \"offset\")\n",
+            "query = out_df.writeStream.format('memory').queryName('kafka_apikey_test').option('checkpointLocation', checkpoint).trigger(processingTime='5 seconds').start()\n",
             "query.awaitTermination(timeout=60)\n",
             "df = spark.sql('SELECT * FROM kafka_apikey_test')\n",
-            "print('input rows in last batch:', query.lastProgress.get('numInputRows'))\n",
+            "df.show()\n",
+            "query.stop()\n",
+            "print('input rows in last batch:', (query.lastProgress or {}).get('numInputRows'))\n",
         ),
-        emit_summary("aidp-streaming-kafka", "apikey-sasl-plain"),
+        emit_summary("aidp-streaming-kafka", "sasl-plain"),
     ]
 
 
@@ -605,7 +579,6 @@ NOTEBOOKS = [
     ("fusion_bicc_to_dataframe", fusion_bicc_to_dataframe),
     ("epm_planning_basic", epm_planning_basic),
     ("essbase_mdx_basic", essbase_mdx_basic),
-    ("kafka_streaming_oauth", kafka_streaming_oauth),
     ("kafka_streaming_apikey", kafka_streaming_apikey),
 ]
 

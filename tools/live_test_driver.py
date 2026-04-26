@@ -59,8 +59,7 @@ LIVE_TEST_ROWS = [
     LiveTestRow(10, "aidp-fusion-bicc",    "HTTP Basic",                         "fusion_bicc_to_dataframe.ipynb", "Extract kicks off -> CSV in OS bucket -> Spark reads it",          True),
     LiveTestRow(11, "aidp-epm-cloud",      "Basic (tenancy.user@domain)",        "epm_planning_basic.ipynb",       "Planning REST applications=200; MDX export -> DataFrame",          False),
     LiveTestRow(12, "aidp-essbase",        "HTTP Basic",                         "essbase_mdx_basic.ipynb",        "MDX SELECT returns DataFrame with expected dim count",             False),
-    LiveTestRow(13, "aidp-streaming-kafka", "SASL_SSL OAuth",                    "kafka_streaming_oauth.ipynb",    "query.lastProgress shows non-zero numInputRows",                   False),
-    LiveTestRow(14, "aidp-streaming-kafka", "SASL/PLAIN with API Key",           "kafka_streaming_apikey.ipynb",   "Same stream via API-key SASL",                                     False),
+    LiveTestRow(13, "aidp-streaming-kafka", "SASL/PLAIN with OCI auth token",    "kafka_streaming_apikey.ipynb",   "query.lastProgress shows non-zero numInputRows; messages parsed from topic", True),
 ]
 
 

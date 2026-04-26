@@ -1,11 +1,11 @@
 """OCI Streaming via Spark structured streaming (Kafka-compat).
 
-Default auth path is **SASL/PLAIN with an OCI auth token** — no custom JAR
-needed. OAuthBearer is documented as Option B but requires a custom callback
-handler the AIDP cluster image cannot easily ingest at the moment.
+Auth = SASL/PLAIN with an OCI auth token. This mirrors the official Oracle
+sample at oracle-samples/oracle-aidp-samples
+(`data-engineering/ingestion/Streaming/StreamingFromOCIStreamingService.ipynb`).
 
-Critical AIDP gotcha: **streaming checkpoints must live under `/Volumes/...`**
-— `/Workspace/...` (FUSE) and `oci://...` both fail silently.
+Critical AIDP gotcha: streaming checkpoints must live under `/Volumes/...`.
+`/Workspace/...` (FUSE) and `oci://...` both fail silently.
 """
 
 from __future__ import annotations
@@ -13,16 +13,24 @@ from __future__ import annotations
 from typing import Optional
 
 
-def bootstrap_for_region(region: str) -> str:
+def bootstrap_for_region(region: str, cell: Optional[int] = None) -> str:
     """Return the OCI Streaming Kafka bootstrap broker for a region.
 
     Args:
         region: e.g. ``us-ashburn-1``.
+        cell: Optional streaming-cell number. If provided, returns the cell-
+            prefixed form (``cell-N.streaming.<region>.oci.oraclecloud.com:9092``)
+            that the official Oracle AIDP sample uses. If None, returns the
+            generic regional form (``streaming.<region>.oci.oraclecloud.com:9092``).
+            OCI routes both correctly; pick whichever matches your pool's
+            messages-endpoint shown in the OCI Console.
 
     Returns:
-        ``streaming.<region>.oci.oraclecloud.com:9092``.
+        ``streaming.<region>.oci.oraclecloud.com:9092`` (no cell), or
+        ``cell-<N>.streaming.<region>.oci.oraclecloud.com:9092`` (with cell).
     """
-    return f"streaming.{region}.oci.oraclecloud.com:9092"
+    host_prefix = f"cell-{cell}.streaming" if cell is not None else "streaming"
+    return f"{host_prefix}.{region}.oci.oraclecloud.com:9092"
 
 
 def build_kafka_options_sasl_plain(
@@ -34,24 +42,33 @@ def build_kafka_options_sasl_plain(
     topic: str,
     *,
     starting_offsets: str = "latest",
+    max_partition_fetch_bytes: Optional[int] = 1024 * 1024,
+    max_offsets_per_trigger: Optional[int] = None,
 ) -> dict:
     """Spark Kafka options for SASL/PLAIN with an OCI auth token.
 
-    OCI Streaming's Kafka-compat surface expects the username in the form
-    ``<tenancy_name>/<username>/<stream_pool_ocid>``. The password is the
-    OCI auth token (Profile → Auth tokens → Generate Token).
+    Mirrors the official Oracle AIDP sample's readStream block. Username
+    format follows OCI Streaming Kafka-compat spec for IAM-Domains tenancies:
+    ``<tenancy_name>/<username>/<stream_pool_ocid>``. For an IAM-Domains user
+    pass ``oracleidentitycloudservice/<email>`` as the ``username`` argument.
 
     Args:
-        bootstrap_servers: ``streaming.<region>.oci.oraclecloud.com:9092``.
+        bootstrap_servers: Output of ``bootstrap_for_region``.
         tenancy_name: OCI tenancy display name (NOT OCID).
-        username: OCI user (typically email).
+        username: OCI user (typically email, optionally prefixed with
+            ``oracleidentitycloudservice/`` for IAM-Domains).
         stream_pool_ocid: ``ocid1.streampool.oc1...``.
-        auth_token: 1-hour OCI auth token. Refresh before long jobs.
+        auth_token: 1-hour OCI auth token.
         topic: Kafka topic name (must exist in the stream pool).
-        starting_offsets: ``latest`` | ``earliest`` | a JSON offset spec.
+        starting_offsets: ``latest`` | ``earliest`` | offsets JSON.
+        max_partition_fetch_bytes: Optional Kafka client tuning. Default
+            1 MiB matches the official sample.
+        max_offsets_per_trigger: Optional cap on rows pulled per micro-batch.
+            ``None`` lets Spark decide; the official sample uses ``5`` for
+            slow demos.
 
     Returns:
-        Dict suitable for ``spark.readStream.format("kafka").options(**dict).load()``.
+        Dict ready for ``spark.readStream.format("kafka").options(**dict).load()``.
     """
     sasl_username = f"{tenancy_name}/{username}/{stream_pool_ocid}"
     jaas_config = (
@@ -59,7 +76,7 @@ def build_kafka_options_sasl_plain(
         f'username="{sasl_username}" '
         f'password="{auth_token}";'
     )
-    return {
+    opts: dict = {
         "kafka.bootstrap.servers": bootstrap_servers,
         "kafka.security.protocol": "SASL_SSL",
         "kafka.sasl.mechanism": "PLAIN",
@@ -67,41 +84,11 @@ def build_kafka_options_sasl_plain(
         "subscribe": topic,
         "startingOffsets": starting_offsets,
     }
-
-
-def build_kafka_options_oauthbearer(
-    bootstrap_servers: str,
-    token_endpoint_url: str,
-    callback_handler_class: str,
-    topic: str,
-    *,
-    starting_offsets: str = "latest",
-) -> dict:
-    """Spark Kafka options for SASL_SSL OAuthBearer (Option B, requires custom JAR).
-
-    NOT RECOMMENDED on AIDP without a pre-attached callback-handler JAR — the
-    cluster image doesn't ship one out-of-the-box. Documented for completeness
-    so users with a packaged JAR can use it.
-
-    Args:
-        bootstrap_servers: same as SASL/PLAIN.
-        token_endpoint_url: OAuth2 token endpoint
-            (e.g. ``https://auth.<region>.oraclecloud.com/v1/oauth2/token``).
-        callback_handler_class: FQCN of a class implementing
-            ``OAuthBearerLoginCallbackHandler`` and bundled in a JAR attached
-            to the cluster.
-        topic: Kafka topic name.
-        starting_offsets: ``latest`` | ``earliest`` | offsets JSON.
-    """
-    return {
-        "kafka.bootstrap.servers": bootstrap_servers,
-        "kafka.security.protocol": "SASL_SSL",
-        "kafka.sasl.mechanism": "OAUTHBEARER",
-        "kafka.sasl.oauthbearer.token.endpoint.url": token_endpoint_url,
-        "kafka.sasl.login.callback.handler.class": callback_handler_class,
-        "subscribe": topic,
-        "startingOffsets": starting_offsets,
-    }
+    if max_partition_fetch_bytes is not None:
+        opts["kafka.max.partition.fetch.bytes"] = str(max_partition_fetch_bytes)
+    if max_offsets_per_trigger is not None:
+        opts["maxOffsetsPerTrigger"] = str(max_offsets_per_trigger)
+    return opts
 
 
 def validate_checkpoint_path(path: str) -> str:

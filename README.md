@@ -76,40 +76,52 @@ The relevant connector skill activates automatically and walks you through:
 
 Per-connector example notebooks are under [`examples/`](examples/) — one per (skill, auth) combo. The full live-test results matrix is in [`tests/live-results/RESULTS.md`](tests/live-results/RESULTS.md).
 
-## Sample run (PostgreSQL)
+## Sample run (EPM Cloud Planning)
 
 ```python
-import os, urllib.request
-from py4j.java_gateway import java_import
+import os
+from oracle_ai_data_platform_connectors.auth import http_basic_session
+from oracle_ai_data_platform_connectors.rest.epm import (
+    list_applications, export_data_slice, slice_to_long_dataframe,
+)
 
-# Runtime-load the Postgres JDBC driver (cluster doesn't have it pre-installed)
-JAR = "/tmp/postgresql-42.7.4.jar"
-if not os.path.exists(JAR):
-    urllib.request.urlretrieve(
-        "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar", JAR)
+# EPM_USERNAME MUST be in identity-domain form: tenancy.user@domain
+# (e.g. epmloaner622.first.last@oracle.com — the bare email returns 401)
+session = http_basic_session(
+    username=os.environ["EPM_USERNAME"],
+    password=os.environ["EPM_PASSWORD"],
+    base_url=os.environ["EPM_BASE_URL"],
+)
 
-gw = spark._sc._gateway
-url = spark._jvm.java.io.File(JAR).toURI().toURL()
-arr = gw.new_array(spark._jvm.java.net.URL, 1); arr[0] = url
-ucl = spark._jvm.java.net.URLClassLoader(arr, spark._jvm.java.lang.ClassLoader.getSystemClassLoader())
-spark._jvm.java.lang.Thread.currentThread().setContextClassLoader(ucl)
-DriverCls = spark._jvm.java.lang.Class.forName("org.postgresql.Driver", True, ucl)
-spark._jvm.java.sql.DriverManager.registerDriver(DriverCls.newInstance())
-spark._jsc.addJar(JAR)
+# Pre-flight: confirm credentials work and the app is reachable
+apps = list_applications(session, os.environ["EPM_BASE_URL"])
+print("applications:", [a["name"] for a in apps])
 
-# Read — note URL-embedded sslmode for SSL-required Postgres (Neon/RDS/most production)
-JDBC_URL = f"jdbc:postgresql://{os.environ['PG_HOST']}:5432/{os.environ['PG_DB']}?sslmode=require"
-df = (spark.read.format("jdbc")
-      .option("url", JDBC_URL)
-      .option("driver", "org.postgresql.Driver")
-      .option("user", os.environ["PG_USER"])
-      .option("password", os.environ["PG_PASSWORD"])
-      .option("dbtable", "public.your_table")
-      .load())
-df.show(5)
+# Export a Planning data slice (POV × columns × rows)
+slice_response = export_data_slice(
+    session=session,
+    base_url=os.environ["EPM_BASE_URL"],
+    application=os.environ["EPM_APPLICATION"],
+    plan_type=os.environ["EPM_PLAN_TYPE"],
+    grid_definition={
+        "suppressMissingBlocks": True,
+        "suppressMissingRows":   True,
+        "pov": {
+            "dimensions": ["HSP_View", "Year", "Scenario", "Version", "Entity", "Product"],
+            "members":    [["BaseData"], ["FY26"], ["Actual"], ["Working"], ["Total Entity"], ["P_TP"]],
+        },
+        "columns": [{"dimensions": ["Period"],  "members": [["Jan", "Feb", "Mar", "Apr", "May", "Jun"]]}],
+        "rows":    [{"dimensions": ["Account"], "members": [["IChildren(PL)"]]}],
+    },
+)
+
+# Materialize as a long-format Spark DataFrame (one row per cell)
+df = slice_to_long_dataframe(spark, slice_response)
+df.show(10)
+print("cells:", df.count())
 ```
 
-The `aidp-postgresql` skill prints exactly this snippet (with your env vars substituted) when you ask Claude to load Postgres data.
+The `aidp-epm-cloud` skill prints exactly this snippet (with your env vars and grid spec substituted) when you ask Claude to pull Planning data into Spark. POV members must be leaf-level — use `IChildren()` / `ILvl0Descendants()` for parents. Empty cells come back as the literal string `"#Missing"` in the `value` column; cast to numeric and filter as needed.
 
 ## Auth methods that Oracle AI Data Platform Workbench notebooks do NOT support today
 

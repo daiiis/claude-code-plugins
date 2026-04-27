@@ -1,7 +1,7 @@
 {
   "name": "oracle-ai-data-platform-workbench-spark-connectors",
-  "version": "0.1.0",
-  "description": "Oracle AI Data Platform (AIDP) Spark connectors for Claude Code: Oracle Autonomous DB family (ALH/ADW/ATP), ExaCS, BDS Hive, Fusion ERP REST, Fusion BICC, EPM Cloud Planning, Essbase 21c, OCI Streaming Kafka. Each skill covers every supported auth method (wallet, IAM DB-Token, API key, Basic, OAuth, Kerberos, LDAP) for use from an AIDP notebook.",
+  "version": "0.4.0",
+  "description": "Oracle AI Data Platform (AIDP) Spark connectors for Claude Code. 18 connector skills covering every data source AIDP customers commonly need: Oracle Autonomous DB family (ALH/ADW/ATP) via wallet/IAM-DB-Token/API-key, ExaCS, Fusion ERP REST, Fusion BICC, EPM Cloud Planning, Essbase 21c, OCI Streaming (Kafka), OCI Object Storage, Apache Iceberg, plus external systems (PostgreSQL, MySQL/HeatWave, SQL Server, Snowflake, Azure ADLS Gen2, AWS S3, generic REST, custom JDBC, Excel). Live-validated on AIDP `tpcds` cluster (Spark 3.5.0): 17 PASS / 4 ship-as-is out of 21 test rows.",
   "author": {
     "name": "Ahmed Awan"
   },
@@ -14,14 +14,24 @@
     "spark",
     "jdbc",
     "lakehouse",
+    "autonomous-database",
     "atp",
+    "adw",
     "exacs",
-    "bds",
     "fusion",
     "epm",
     "essbase",
     "kafka",
     "streaming",
+    "object-storage",
+    "iceberg",
+    "postgresql",
+    "mysql",
+    "sqlserver",
+    "snowflake",
+    "adls",
+    "s3",
+    "rest",
     "connector"
   ]
 }

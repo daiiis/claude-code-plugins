@@ -15,33 +15,63 @@ Read or write `s3a://<bucket>/<key>` paths from AIDP Spark using AWS access keys
 - For OCI Object Storage → [`aidp-object-storage`](../aidp-object-storage/SKILL.md).
 - For Azure ADLS Gen2 → [`aidp-azure-adls`](../aidp-azure-adls/SKILL.md).
 
-## Cluster prerequisite — `aws-java-sdk-bundle`
+## Cluster prerequisite — runtime-load BOTH `hadoop-aws` and `aws-java-sdk-bundle`
 
-The S3A driver needs `hadoop-aws` (typically already in the cluster) plus `aws-java-sdk-bundle-<ver>.jar` (~280 MB). If not present, upload the matching version to a Volume and attach via the cluster Library tab. Mismatched versions silently fail with NoSuchMethod errors at runtime.
+The AIDP `tpcds` cluster does NOT have `org.apache.hadoop.fs.s3a.S3AFileSystem` pre-installed (verified live 2026-04-27). Both `hadoop-aws-<ver>.jar` (~1 MB) AND `aws-java-sdk-bundle-<ver>.jar` (~280 MB) must be runtime-loaded. **Match `hadoop-aws` to the cluster's exact Hadoop version** (`spark._jvm.org.apache.hadoop.util.VersionInfo.getVersion()` — typically `3.3.4` for Spark 3.5.0). Mismatch produces `NoSuchMethodError` deep in `org.apache.hadoop.fs.s3a`.
 
-## Spark read/write (S3A, key-based auth)
+Beyond the standard runtime-load + DriverManager pattern, S3A also requires telling Hadoop's Configuration which classloader to use — Hadoop's `FileSystem.get()` uses `Configuration.getClassLoader()`, not the JVM thread context loader.
+
+## Spark read (S3A, runtime-loaded driver)
 
 ```python
-import os
+import os, urllib.request
+from py4j.java_gateway import java_import
 
-# Tell the S3A driver to use simple-credential auth from the standard env vars.
-spark.conf.set("fs.s3a.aws.credentials.provider",
-               "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
+# 1. Confirm cluster's Hadoop version + match hadoop-aws jar
+HADOOP_VER = spark._jvm.org.apache.hadoop.util.VersionInfo.getVersion()
+print("hadoop:", HADOOP_VER)  # e.g. 3.3.4
 
-# Standard AWS env vars are read by the SimpleAWSCredentialsProvider.
-os.environ["AWS_ACCESS_KEY_ID"]     = os.environ["S3_ACCESS_KEY"]
-os.environ["AWS_SECRET_ACCESS_KEY"] = os.environ["S3_SECRET_KEY"]
+JARS = {
+    f"/tmp/hadoop-aws-{HADOOP_VER}.jar":
+        f"https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/{HADOOP_VER}/hadoop-aws-{HADOOP_VER}.jar",
+    "/tmp/aws-java-sdk-bundle-1.12.262.jar":
+        "https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar",
+}
+for path, url in JARS.items():
+    if not os.path.exists(path):
+        urllib.request.urlretrieve(url, path)
 
-bucket = os.environ["S3_BUCKET"]
-key    = os.environ["S3_FILE"]
+# 2. Build URLClassLoader covering BOTH jars + set on Hadoop Configuration
+gw = spark._sc._gateway
+URLArr = gw.new_array(spark._jvm.java.net.URL, len(JARS))
+for i, p in enumerate(JARS):
+    URLArr[i] = spark._jvm.java.io.File(p).toURI().toURL()
+sysCL = spark._jvm.java.lang.ClassLoader.getSystemClassLoader()
+ucl = spark._jvm.java.net.URLClassLoader(URLArr, sysCL)
 
-# Read JSON (swap .json for .csv / .parquet / .delta as needed)
-df = spark.read.json(f"s3a://{bucket}/{key}")
+hconf = spark._jsc.hadoopConfiguration()
+hconf.setClassLoader(ucl)  # CRITICAL — Hadoop FileSystem lookup uses this, not the thread context
+
+# 3. Configure S3A credentials + endpoint
+hconf.set("fs.s3a.access.key", os.environ["S3_ACCESS_KEY"])
+hconf.set("fs.s3a.secret.key", os.environ["S3_SECRET_KEY"])
+hconf.set("fs.s3a.endpoint", "s3.amazonaws.com")  # or s3.<region>.amazonaws.com
+hconf.set("fs.s3a.aws.credentials.provider",
+          "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
+hconf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+
+# 4. Distribute the jars to executors (driver-only registration won't work for cluster reads)
+for p in JARS:
+    spark._jsc.addJar(p)
+
+# 5. Read — works for csv/json/parquet/delta
+df = spark.read.option("header", "true").csv(
+    f"s3a://{os.environ['S3_BUCKET']}/{os.environ['S3_FILE']}"
+)
 df.show()
-
-# Write to a managed table
-df.write.mode("overwrite").format("delta").saveAsTable("default.default.data_from_s3")
 ```
+
+**Live-validated 2026-04-27**: 2 rows from `s3a://test-data-sep3-2025/csv/sample.csv` via this pattern.
 
 ## boto3 fallback (management ops, not data plane)
 
@@ -63,8 +93,10 @@ for obj in resp.get("Contents", []):
 ## Gotchas
 - **Use `s3a://` (the Hadoop driver), not `s3://` or `s3n://`.** The latter two are deprecated and may not be present in the cluster.
 - **`aws-java-sdk-bundle` version drift** — pin to the version `hadoop-aws` was built against. Lab clusters often need this jar installed; the symptom of mismatch is `NoSuchMethodError` deep in `org.apache.hadoop.fs.s3a` when listing/reading.
+- **`Configuration.setClassLoader` is required after runtime-load** — Hadoop's `FileSystem.get()` calls `Configuration.getClassByName()` which uses the Configuration's classloader (not the JVM thread context). Without `hconf.setClassLoader(ucl)`, you get `ClassNotFoundException: Class org.apache.hadoop.fs.s3a.S3AFileSystem not found` even though you just registered the jar.
 - **Secrets in env vars only.** Never hard-code keys in notebooks. Source from `.env`/OCI Vault.
 - **Region** — `boto3.client('s3', region_name=...)` is required for non-default regions; for the Spark path the bucket region is auto-discovered, but you may need `fs.s3a.endpoint=s3.<region>.amazonaws.com` for non-us-east-1 if listings fail.
+- **`boto3` is NOT pre-installed on AIDP cluster** and PyPI mirror is typically unreachable. For management ops (list, copy, head), drive from local rather than cluster.
 - **Egress cost & latency** — S3 reads from AIDP cross-cloud. For heavy ETL, copy to OCI Object Storage once and read locally.
 
 ## References

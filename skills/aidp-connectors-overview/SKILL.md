@@ -23,10 +23,8 @@ Otherwise, pick the right skill from this table and **invoke that skill**. Don't
 
 | User says... | Use skill |
 |---|---|
-| "ALH", "AI Lakehouse", "ADW", "ATP", "Autonomous Database", "26ai", "external catalog from lakehouse" | [`aidp-alh`](../aidp-alh/SKILL.md) — covers the entire Autonomous DB family |
+| "ALH", "AI Lakehouse", "ADW", "ATP", "Autonomous Database", "26ai", "external catalog from lakehouse", "Oracle on Compute", "Base DB", "on-prem Oracle", "Oracle 19c / 21c" | [`aidp-alh`](../aidp-alh/SKILL.md) — covers the entire Oracle DB family (Autonomous + non-Autonomous) |
 | "ExaCS", "Exadata", "Exadata Cloud", "private-subnet Oracle DB" | [`aidp-exacs`](../aidp-exacs/SKILL.md) |
-| "Oracle on Compute", "Base DB", "on-prem Oracle", "Oracle 19c / 21c" | [`aidp-oracle-db`](../aidp-oracle-db/SKILL.md) |
-| "BDS", "Big Data Service", "Hive", "HiveServer2", "Hadoop on OCI" | [`aidp-bds-hive`](../aidp-bds-hive/SKILL.md) |
 | "Fusion ERP", "Fusion HCM", "Fusion REST", "FA REST", "Cloud ERP API" | [`aidp-fusion-rest`](../aidp-fusion-rest/SKILL.md) |
 | "BICC", "BI Cloud Connector", "Fusion bulk extract", >50k rows from Fusion | [`aidp-fusion-bicc`](../aidp-fusion-bicc/SKILL.md) |
 | "EPM Cloud", "EPBCS", "Hyperion Planning", "Planning app", "exportdataslice" | [`aidp-epm-cloud`](../aidp-epm-cloud/SKILL.md) |

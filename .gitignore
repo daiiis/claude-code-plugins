@@ -220,3 +220,11 @@ __marimo__/
 # Live-test ephemeral staging artifacts (never commit creds)
 tests/live-results/_*
 
+
+# Credential files (extra hardening — never commit these even if accidentally placed in repo)
+*.pem
+*.key
+*.keytab
+wallet*.zip
+*_wallet.zip
+.secrets/

@@ -1,22 +1,29 @@
 # Oracle AI Data Platform — Spark Connectors
 
-A Claude Code plugin that ships model-invokable skills for connecting to every major Oracle source from an Oracle AI Data Platform (AIDP) notebook. Each skill covers every auth method that AIDP notebooks actually support today, and produces plain Python (Spark JDBC, Spark structured streaming, or REST → Spark DataFrame) that runs in the notebook without any additional runtime.
+A Claude Code plugin that ships **18 model-invokable skills** for connecting Oracle AI Data Platform (AIDP) Spark notebooks to every data source AIDP customers commonly need. Each skill produces plain Python (Spark JDBC, Spark structured streaming, Spark `oci://`/`s3a://`/`abfss://`, or REST → Spark DataFrame) that runs in the notebook without any additional runtime.
+
+**Live-validated** on AIDP `tpcds` cluster (Spark 3.5.0): **17 PASS / 4 ship-as-is** out of 21 test rows. See [`tests/live-results/RESULTS.md`](tests/live-results/RESULTS.md).
+
+## Install
+
+```
+/plugin marketplace add ahmedawan-oracle/oracle-ai-data-platform-workbench-spark-connectors
+/plugin install oracle-ai-data-platform-workbench-spark-connectors
+```
 
 ## What's in here
 
-20 connector skills, one bootstrap skill, one routing skill:
+20 skills total (18 connectors + 1 bootstrap + 1 routing).
 
 ### Oracle / OCI sources
 | Skill | Target | Transport | Recommended auth |
 |---|---|---|---|
 | `aidp-connectors-overview` | (router) | — | — |
 | `aidp-connectors-bootstrap` | one-time setup | — | — |
-| `aidp-alh` | Oracle Autonomous DB family (ALH, ADW, ATP) | Spark JDBC | Wallet (mTLS) |
+| `aidp-alh` | Oracle DB family (Autonomous: ALH/ADW/ATP + non-Autonomous: Compute/Base DB/on-prem) | Spark JDBC | Wallet (mTLS) for Autonomous, plain user/password for non-Autonomous |
 | `aidp-exacs` | Exadata Cloud Service | Spark JDBC (TCP 1521 + NNE AES256) | Plain user/password |
-| `aidp-oracle-db` | Generic Oracle DB (Compute, Base DB, on-prem) | `aidataplatform` (`type=ORACLE_DB`) | Plain user/password |
-| `aidp-bds-hive` | Big Data Service HiveServer2 | Spark JDBC (Hive) | LDAP |
-| `aidp-fusion-rest` | Fusion ERP/HCM/SCM | REST → DataFrame | HTTP Basic only |
-| `aidp-fusion-bicc` | Fusion BICC extracts | `aidataplatform` (`type=FUSION_BICC`) | HTTP Basic |
+| `aidp-fusion-rest` | Fusion ERP/HCM/SCM | REST → DataFrame | HTTP Basic |
+| `aidp-fusion-bicc` | Fusion BICC bulk extracts | `aidataplatform` (`type=FUSION_BICC`) | HTTP Basic |
 | `aidp-epm-cloud` | EPM Cloud Planning | REST → DataFrame | HTTP Basic (`tenancy.user@domain`) |
 | `aidp-essbase` | Essbase 21c | REST + MDX → DataFrame | HTTP Basic |
 | `aidp-streaming-kafka` | OCI Streaming | Spark structured streaming | SASL/PLAIN with OCI auth token |
@@ -26,7 +33,7 @@ A Claude Code plugin that ships model-invokable skills for connecting to every m
 ### External RDBMS (`aidataplatform` format)
 | Skill | Target | Transport | Recommended auth |
 |---|---|---|---|
-| `aidp-postgresql` | PostgreSQL | `aidataplatform` (`type=POSTGRESQL`) | Plain user/password |
+| `aidp-postgresql` | PostgreSQL | Spark JDBC (runtime-loaded driver) for SSL targets, `aidataplatform` `type=POSTGRESQL` for non-SSL | Plain user/password |
 | `aidp-mysql` | MySQL / OCI MySQL HeatWave | `aidataplatform` (`type=MYSQL` or `MYSQL_HEATWAVE`) | Plain user/password |
 | `aidp-sqlserver` | Microsoft SQL Server / Azure SQL DB | `aidataplatform` (`type=SQLSERVER`) | Plain user/password |
 
@@ -35,27 +42,10 @@ A Claude Code plugin that ships model-invokable skills for connecting to every m
 |---|---|---|---|
 | `aidp-snowflake` | Snowflake | `format("snowflake")` (Snowflake Spark connector) | sfUser/sfPassword |
 | `aidp-azure-adls` | Azure ADLS Gen2 | Spark `abfss://` | OAuth client-credentials (Service Principal) |
-| `aidp-aws-s3` | AWS S3 | Spark `s3a://` | AWS access keys |
+| `aidp-aws-s3` | AWS S3 | Spark `s3a://` (runtime-loaded `hadoop-aws` + `aws-java-sdk-bundle`) | AWS access keys |
 | `aidp-rest-generic` | Any REST API with a manifest | `aidataplatform` (`type=GENERIC_REST`) | HTTP Basic |
-| `aidp-jdbc-custom` | Any DB with a JDBC driver | Spark `format("jdbc")` | Driver-specific |
-| `aidp-excel` | `.xlsx` files in Volumes / Object Storage | `com.crealytics.spark.excel` or `pandas → CSV → Spark` | None (file-based) |
-
-Full per-connector × per-auth matrix is in [docs/AUTH_MATRIX.md](docs/AUTH_MATRIX.md) (will be generated as live tests pass).
-
-## Install
-
-```bash
-# After this repo flips to public:
-/plugin marketplace add ahmedawan-oracle/oracle-ai-data-platform-workbench-spark-connectors
-/plugin install oracle-ai-data-platform-workbench-spark-connectors
-```
-
-While the repo is private, install from a local clone:
-
-```bash
-git clone https://github.com/ahmedawan-oracle/oracle-ai-data-platform-workbench-spark-connectors.git
-claude --plugin-dir ./oracle-ai-data-platform-workbench-spark-connectors
-```
+| `aidp-jdbc-custom` | Any DB with a JDBC driver | Spark `format("jdbc")` (runtime-loaded driver) | Driver-specific |
+| `aidp-excel` | `.xlsx` files in Volumes / Object Storage | stdlib `zipfile` + XML parser (no extra deps) | None (file-based) |
 
 ## How to use
 
@@ -65,9 +55,9 @@ Tell Claude:
 
 > "Set up the AIDP connectors plugin in this workspace."
 
-The `aidp-connectors-bootstrap` skill activates and uses the AIDP MCP tools to upload the helper package to `/Workspace/Shared/oracle_ai_data_platform_connectors/`, then runs [`examples/00_bootstrap_helpers.ipynb`](examples/00_bootstrap_helpers.ipynb) which prints `BOOTSTRAP OK` when the package is importable from a notebook cell.
+The `aidp-connectors-bootstrap` skill activates, uses the AIDP MCP tools to upload the helper package to `/Workspace/Shared/oracle_ai_data_platform_connectors/`, then runs [`examples/00_bootstrap_helpers.ipynb`](examples/00_bootstrap_helpers.ipynb) which prints `BOOTSTRAP OK` when the package imports cleanly.
 
-(If you're not using Claude or prefer manual setup: upload `scripts/oracle_ai_data_platform_connectors/` to `/Workspace/Shared/oracle_ai_data_platform_connectors/scripts/oracle_ai_data_platform_connectors/` via the AIDP UI, then run the bootstrap notebook to confirm.)
+(Manual alternative: upload `scripts/oracle_ai_data_platform_connectors/` to `/Workspace/Shared/oracle_ai_data_platform_connectors/scripts/oracle_ai_data_platform_connectors/` via the AIDP UI, then run the bootstrap notebook.)
 
 ### Day-to-day
 
@@ -76,20 +66,59 @@ In a Claude Code session against your AIDP workspace, just describe what you wan
 > "I need to load ATP data into Spark in my AIDP notebook"
 
 The relevant connector skill activates automatically and walks you through:
-1. Prerequisites (env vars / OCI Vault secrets, JDBC jar via `spark.jars` if needed).
-2. Auth options — pick one (wallet, DB-token, API key, Basic, OAuth, Kerberos, LDAP).
-3. The Spark JDBC / REST / streaming snippet ready to paste into a notebook cell.
-4. Known gotchas.
 
-## Auth methods that are NOT supported in AIDP notebooks today
+1. **Prerequisites** — env vars / OCI Vault secrets, JDBC jar runtime-load if needed.
+2. **Auth options** — pick one (wallet, IAM DB-Token, API key + inline PEM, HTTP Basic, OAuth, AWS keys, Service Principal).
+3. **Code** — Spark JDBC / REST / streaming snippet ready to paste into a notebook cell.
+4. **Gotchas** — known constraints captured from live testing (FUSE write modes, SSL handling, runtime-load classloader, executor distribution, etc.).
 
-**Instance Principal** and **Resource Principal** are blocked at the AIDP platform level:
-- AIDP sets `AIDP_AUTH=resource_principal` but does not provide `OCI_RESOURCE_PRINCIPAL_RPST` or `OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM` — `oci.auth.signers.get_resource_principals_signer()` fails.
-- IMDS (`169.254.169.254`) is blocked, so `InstancePrincipalsSecurityTokenSigner()` either fails or runs in the AIDP service tenancy (not the customer's).
+### Examples
 
-These limitations are pending Oracle action. Use API Key + inline OCI config (see `aidp_connectors.auth.oci_config.from_inline_pem`) until then. Background: https://github.com/oracle-samples/oracle-aidp-samples and the AIDP team's notebook auth investigation.
+Per-connector example notebooks are under [`examples/`](examples/) — one per (skill, auth) combo. The full live-test results matrix is in [`tests/live-results/RESULTS.md`](tests/live-results/RESULTS.md).
 
-## Development
+## Sample run (PostgreSQL)
+
+```python
+import os, urllib.request
+from py4j.java_gateway import java_import
+
+# Runtime-load the Postgres JDBC driver (cluster doesn't have it pre-installed)
+JAR = "/tmp/postgresql-42.7.4.jar"
+if not os.path.exists(JAR):
+    urllib.request.urlretrieve(
+        "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar", JAR)
+
+gw = spark._sc._gateway
+url = spark._jvm.java.io.File(JAR).toURI().toURL()
+arr = gw.new_array(spark._jvm.java.net.URL, 1); arr[0] = url
+ucl = spark._jvm.java.net.URLClassLoader(arr, spark._jvm.java.lang.ClassLoader.getSystemClassLoader())
+spark._jvm.java.lang.Thread.currentThread().setContextClassLoader(ucl)
+DriverCls = spark._jvm.java.lang.Class.forName("org.postgresql.Driver", True, ucl)
+spark._jvm.java.sql.DriverManager.registerDriver(DriverCls.newInstance())
+spark._jsc.addJar(JAR)
+
+# Read — note URL-embedded sslmode for SSL-required Postgres (Neon/RDS/most production)
+JDBC_URL = f"jdbc:postgresql://{os.environ['PG_HOST']}:5432/{os.environ['PG_DB']}?sslmode=require"
+df = (spark.read.format("jdbc")
+      .option("url", JDBC_URL)
+      .option("driver", "org.postgresql.Driver")
+      .option("user", os.environ["PG_USER"])
+      .option("password", os.environ["PG_PASSWORD"])
+      .option("dbtable", "public.your_table")
+      .load())
+df.show(5)
+```
+
+The `aidp-postgresql` skill prints exactly this snippet (with your env vars substituted) when you ask Claude to load Postgres data.
+
+## Auth methods that AIDP notebooks do NOT support today
+
+- **Instance Principal** — AIDP blocks IMDS (`169.254.169.254`); `InstancePrincipalsSecurityTokenSigner()` fails.
+- **Resource Principal** — AIDP sets `AIDP_AUTH=resource_principal` but does not provide `OCI_RESOURCE_PRINCIPAL_RPST` or `OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM`.
+
+The skills surface these as a known limitation and route users to **API Key + inline PEM** (`aidp_connectors.auth.oci_config.from_inline_pem`) instead. Background: https://github.com/oracle-samples/oracle-aidp-samples and the AIDP team's notebook-auth investigation.
+
+## Plugin development
 
 ```bash
 # Validate plugin shape
@@ -100,11 +129,15 @@ python -m pytest tests/ -v
 
 # Live-test a connector against AIDP
 oci session authenticate --profile AIDP_SESSION --region us-ashburn-1
-python examples/atp_wallet_query.py
+# Open examples/<connector>_*.ipynb in your AIDP workspace and run
 ```
 
-See [CHANGELOG.md](CHANGELOG.md) for release history and [tests/live-results/RESULTS.md](tests/live-results/RESULTS.md) for the current live-test pass/fail matrix.
+Live-validation infrastructure is documented in [`tools/live_test_driver.py`](tools/live_test_driver.py); per-row results are in [`tests/live-results/`](tests/live-results/).
+
+## Versioning + changelog
+
+This plugin follows [SemVer](https://semver.org/). Release notes for every version live in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [`LICENSE`](LICENSE).

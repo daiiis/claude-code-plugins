@@ -16,7 +16,6 @@ If the user names ATP or ADW specifically, just use this skill — substitute th
 
 ## When NOT to use
 - For ExaCS / on-prem Oracle → use [`aidp-exacs`](../aidp-exacs/SKILL.md).
-- For Hive on Big Data Service → use [`aidp-bds-hive`](../aidp-bds-hive/SKILL.md).
 
 ## Prerequisites in the AIDP notebook
 1. The Oracle JDBC driver (`ojdbc11.jar` or `ojdbc8.jar`) must be on the cluster classpath. AIDP `tpcds` cluster ships it; if not, attach via Cluster → Libraries.

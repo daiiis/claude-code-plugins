@@ -52,8 +52,7 @@ LIVE_TEST_ROWS = [
     LiveTestRow(3,  "aidp-alh",            "API Key + inline OCI config",        "alh_catalog_sync_apikey.ipynb",  "External-catalog metadata refresh succeeds; downstream Spark read", False),
     # Rows 4 and 5 (ExaCS Wallet TCPS / IAM DB-Token) were removed: neither is supported by AIDP notebooks for ExaCS.
     LiveTestRow(6,  "aidp-exacs",          "Plain user/pwd on TCP 1521 + NNE AES256", "exacs_user_password.ipynb",  "Spark JDBC connect; AES256 NNE confirmed via v$session_connect_info", False),
-    LiveTestRow(7,  "aidp-bds-hive",       "Kerberos keytab",                    "bds_hive_kerberos.ipynb",        "kinit succeeds, Hive JDBC SHOW TABLES returns rows",               False),
-    LiveTestRow(8,  "aidp-bds-hive",       "LDAP",                               "bds_hive_ldap.ipynb",            "Same query via LDAP bind",                                         False),
+    # Rows 7 and 8 (aidp-bds-hive Kerberos / LDAP) were removed: skill dropped from the plugin (BDS Hive not in scope).
     LiveTestRow(9,  "aidp-fusion-rest",    "HTTP Basic",                         "fusion_rest_basic.ipynb",        "<=499-row paged fetch lands as Spark DataFrame",                   True),
     LiveTestRow(10, "aidp-fusion-bicc",    "HTTP Basic",                         "fusion_bicc_to_dataframe.ipynb", "Extract kicks off -> CSV in OS bucket -> Spark reads it",          True),
     LiveTestRow(11, "aidp-epm-cloud",      "Basic (tenancy.user@domain)",        "epm_planning_basic.ipynb",       "Planning REST applications=200; MDX export -> DataFrame",          False),
@@ -64,7 +63,6 @@ LIVE_TEST_ROWS = [
     LiveTestRow(15, "aidp-postgresql",     "Plain user/password",                "postgresql_read.ipynb",          "Spark DataFrame from a known PostgreSQL table",                    False),
     LiveTestRow(16, "aidp-mysql",          "Plain user/password (MYSQL or MYSQL_HEATWAVE)", "mysql_read.ipynb",      "Spark DataFrame from a known MySQL or HeatWave table",             False),
     LiveTestRow(17, "aidp-sqlserver",      "Plain user/password",                "sqlserver_read.ipynb",           "Spark DataFrame from a known SQL Server table",                    False),
-    LiveTestRow(18, "aidp-oracle-db",      "Plain user/password (TCP 1521)",     "oracle_db_read.ipynb",           "Spark DataFrame from an Oracle DB on Compute/on-prem",             False),
     LiveTestRow(19, "aidp-iceberg",        "Implicit IAM (oci:// Hadoop catalog)", "iceberg_smoke.ipynb",          "Iceberg table created + rows written + read; snapshots visible",   False),
     LiveTestRow(20, "aidp-snowflake",      "sfUser/sfPassword",                  "snowflake_read.ipynb",           "Spark DataFrame from a Snowflake table via Snowflake connector",   False),
     LiveTestRow(21, "aidp-azure-adls",     "OAuth client-credentials",           "adls_read.ipynb",                "Spark CSV read from an ADLS Gen2 container",                       False),

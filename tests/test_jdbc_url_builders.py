@@ -5,9 +5,7 @@ from __future__ import annotations
 import pytest
 
 from oracle_ai_data_platform_connectors.jdbc import (
-    build_hive_jdbc_url,
     build_oracle_jdbc_url,
-    spark_hive_jdbc_options,
     spark_jdbc_options_dbtoken,
     spark_jdbc_options_password,
     spark_jdbc_options_wallet,
@@ -92,49 +90,3 @@ def test_password_options_basic():
     assert "oracle.jdbc.tokenAuthentication" not in opts
 
 
-# --- Hive URL builder -------------------------------------------------------
-
-
-def test_hive_ldap_url():
-    url = build_hive_jdbc_url(host="hs2.bds.subnet", auth="ldap")
-    assert url == "jdbc:hive2://hs2.bds.subnet:10000/default;auth=ldap"
-
-
-def test_hive_kerberos_url_requires_principal():
-    with pytest.raises(ValueError, match="Kerberos auth requires"):
-        build_hive_jdbc_url(host="h", auth="kerberos")
-
-
-def test_hive_kerberos_full_url():
-    url = build_hive_jdbc_url(
-        host="hs2.bds",
-        port=10001,
-        database="analytics",
-        auth="kerberos",
-        principal="hive/hs2.bds@EXAMPLE.COM",
-        ssl=True,
-    )
-    assert "auth=kerberos" in url
-    assert "principal=hive/hs2.bds@EXAMPLE.COM" in url
-    assert "ssl=true" in url
-    assert ":10001" in url
-    assert "/analytics;" in url
-
-
-def test_hive_options_omit_user_for_kerberos():
-    opts = spark_hive_jdbc_options(
-        url="jdbc:hive2://h:10000/d;auth=kerberos;principal=hive/h@R",
-    )
-    assert opts["driver"] == "org.apache.hive.jdbc.HiveDriver"
-    assert "user" not in opts
-    assert "password" not in opts
-
-
-def test_hive_options_carry_ldap_credentials():
-    opts = spark_hive_jdbc_options(
-        url="jdbc:hive2://h:10000/d;auth=ldap",
-        user="alice",
-        password="pw",
-    )
-    assert opts["user"] == "alice"
-    assert opts["password"] == "pw"

@@ -258,63 +258,6 @@ def exacs_user_password() -> List[dict]:
     ]
 
 
-def bds_hive_kerberos() -> List[dict]:
-    return [
-        md(
-            "# `aidp-bds-hive` live test — Kerberos\n",
-            "**Live-test row 7.** Requires `kinit` on the cluster image (TBD; this notebook will fail fast with a clear error if not).\n",
-        ),
-        sys_path_setup(),
-        code(
-            "from oracle_ai_data_platform_connectors.jdbc import build_hive_jdbc_url, spark_hive_jdbc_options\n",
-            "from oracle_ai_data_platform_connectors.jdbc.hive import kerberos_kinit\n",
-            "\n",
-            "kerberos_kinit(\n",
-            "    principal=os.environ['BDS_KRB_PRINCIPAL'],\n",
-            "    keytab_path=os.environ['BDS_KRB_KEYTAB_PATH'],  # MUST be /tmp/...\n",
-            ")\n",
-            "url = build_hive_jdbc_url(\n",
-            "    host=os.environ['BDS_HS2_HOST'], port=10000,\n",
-            "    database=os.environ.get('BDS_HS2_DATABASE', 'default'),\n",
-            "    auth='kerberos',\n",
-            "    principal=f\"hive/{os.environ['BDS_HS2_HOST']}@{os.environ['BDS_HIVE_REALM']}\",\n",
-            ")\n",
-            "opts = spark_hive_jdbc_options(url=url)\n",
-        ),
-        code(
-            "df = spark.read.format('jdbc').options(**opts).option('dbtable', os.environ['BDS_TABLE_FOR_TEST']).load()\n",
-            "df.show(5)\n",
-        ),
-        emit_summary("aidp-bds-hive", "kerberos"),
-    ]
-
-
-def bds_hive_ldap() -> List[dict]:
-    return [
-        md(
-            "# `aidp-bds-hive` live test — LDAP\n",
-            "**Live-test row 8.** Recommended default for v0.1.\n",
-        ),
-        sys_path_setup(),
-        code(
-            "from oracle_ai_data_platform_connectors.jdbc import build_hive_jdbc_url, spark_hive_jdbc_options\n",
-            "\n",
-            "url = build_hive_jdbc_url(\n",
-            "    host=os.environ['BDS_HS2_HOST'],\n",
-            "    port=int(os.environ.get('BDS_HS2_PORT', '10000')),\n",
-            "    database=os.environ.get('BDS_HS2_DATABASE', 'default'),\n",
-            "    auth='ldap',\n",
-            ")\n",
-            "opts = spark_hive_jdbc_options(url=url, user=os.environ['BDS_LDAP_USER'], password=os.environ['BDS_LDAP_PASSWORD'])\n",
-        ),
-        code(
-            "df = spark.read.format('jdbc').options(**opts).option('dbtable', os.environ['BDS_TABLE_FOR_TEST']).load()\n",
-            "df.show(5)\n",
-        ),
-        emit_summary("aidp-bds-hive", "ldap"),
-    ]
-
-
 def fusion_rest_basic() -> List[dict]:
     return [
         md(
@@ -525,9 +468,8 @@ def bootstrap_helpers() -> List[dict]:
             "    http_basic_session, oauth_token, get_secret,\n",
             ")\n",
             "from oracle_ai_data_platform_connectors.jdbc import (\n",
-            "    build_oracle_jdbc_url, build_hive_jdbc_url,\n",
+            "    build_oracle_jdbc_url,\n",
             "    spark_jdbc_options_wallet, spark_jdbc_options_dbtoken, spark_jdbc_options_password,\n",
-            "    spark_hive_jdbc_options,\n",
             ")\n",
             "from oracle_ai_data_platform_connectors.rest import fusion, epm, essbase  # noqa: F401\n",
             "from oracle_ai_data_platform_connectors.streaming import (\n",
@@ -622,12 +564,6 @@ def mysql_read() -> List[dict]:
 
 def sqlserver_read() -> List[dict]:
     return _aidp_format_read("aidp-sqlserver", "SQLSERVER", "MSSQL")
-
-
-def oracle_db_read() -> List[dict]:
-    return _aidp_format_read(
-        "aidp-oracle-db", "ORACLE_DB", "ORADB", has_database_name=True,
-    )
 
 
 def object_storage_csv_roundtrip() -> List[dict]:
@@ -854,8 +790,6 @@ NOTEBOOKS = [
     ("alh_dbtoken_query", alh_dbtoken_query),
     ("alh_catalog_sync_apikey", alh_catalog_sync_apikey),
     ("exacs_user_password", exacs_user_password),
-    ("bds_hive_kerberos", bds_hive_kerberos),
-    ("bds_hive_ldap", bds_hive_ldap),
     ("fusion_rest_basic", fusion_rest_basic),
     ("fusion_bicc_to_dataframe", fusion_bicc_to_dataframe),
     ("epm_planning_basic", epm_planning_basic),
@@ -866,7 +800,6 @@ NOTEBOOKS = [
     ("postgresql_read", postgresql_read),
     ("mysql_read", mysql_read),
     ("sqlserver_read", sqlserver_read),
-    ("oracle_db_read", oracle_db_read),
     ("iceberg_smoke", iceberg_smoke),
     ("snowflake_read", snowflake_read),
     ("adls_read", adls_read),

@@ -113,7 +113,7 @@ The `aidp-postgresql` skill prints exactly this snippet (with your env vars subs
 
 ## Auth methods that Oracle AI Data Platform Workbench notebooks do NOT support today
 
-- **Instance Principal** — the workbench blocks IMDS (`169.254.169.254`); `InstancePrincipalsSecurityTokenSigner()` fails.
+- **Instance Principal** — the workbench blocks the OCI instance-metadata service; `InstancePrincipalsSecurityTokenSigner()` fails.
 - **Resource Principal** — the workbench sets `AIDP_AUTH=resource_principal` but does not provide `OCI_RESOURCE_PRINCIPAL_RPST` or `OCI_RESOURCE_PRINCIPAL_PRIVATE_PEM`.
 
 The skills surface these as a known limitation and route users to **API Key + inline PEM** (`aidp_connectors.auth.oci_config.from_inline_pem`) instead. Background: https://github.com/oracle-samples/oracle-aidp-samples and the workbench team's notebook-auth investigation.

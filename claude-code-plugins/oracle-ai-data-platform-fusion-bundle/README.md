@@ -37,15 +37,22 @@ aidp-fusion-bundle bootstrap --check-iam
 # 4. Run the orchestrator (first time = full extract; subsequent = incremental)
 aidp-fusion-bundle run --mode seed
 
-# 5. Install OAC dashboards (one-time per OAC instance)
-aidp-fusion-bundle dashboard install --target oac --oac-url https://your-oac.example.com
+# 5. Upload the bundle's snapshot .bar to your OCI Object Storage bucket
+oci os object put --bucket-name aidp-fusion-bundle-bar \
+                  --file ./bundle-v0.1.0a0.bar --name bundle-v0.1.0a0.bar
 
-# 6. Print MCP config snippet for end users (paste into claude_desktop_config.json)
+# 6. Install OAC connection + restore the snapshot (one-time per OAC instance)
+aidp-fusion-bundle dashboard install --target oac \
+  --oac-url https://your-oac.example.com \
+  --bar-bucket aidp-fusion-bundle-bar --bar-uri bundle-v0.1.0a0.bar
+# (See docs/oac_rest_api_setup.md for the full args + IAM/Resource Principal setup)
+
+# 7. Print MCP config snippet for end users (paste into claude_desktop_config.json)
 aidp-fusion-bundle dashboard mcp-config --oac-url https://your-oac.example.com \
   --oac-mcp-connect-js /path/to/oac-mcp-connect.js
 ```
 
-After step 6, restart your AI client and ask "what's our AR aging?" — OAC MCP will route through `discoverData` → `describeData` → `executeLogicalSQL` against `fusion_catalog.gold.ar_aging`.
+After step 7, restart your AI client and ask "what's our AR aging?" — OAC MCP will route through `discoverData` → `describeData` → `executeLogicalSQL` against `fusion_catalog.gold.ar_aging`.
 
 ---
 
@@ -61,11 +68,12 @@ After step 6, restart your AI client and ask "what's our AR aging?" — OAC MCP 
                                                                  ▼
 ┌─────────────────────────────────┐    REST API    ┌──────────────────────────────┐
 │ aidp-fusion-bundle dashboard    │───────────────▶│       Oracle Analytics       │
-│  install --target oac           │  (1) register  │       Cloud (OAC)            │
-│                                 │      data src  │                              │
-│  - registers JDBC data source   │  (2) import    │  - data source: aidp_fusion  │
-│  - imports oac/workbooks/*.dva  │      .dva      │  - workbooks: cfo_dashboard, │
-│  - validates each renders       │                │    ar_aging, ap_aging, ...   │
+│  install --target oac           │  (1) POST      │       Cloud (OAC)            │
+│                                 │      /catalog/ │                              │
+│  - POST /catalog/connections    │      conns     │  - data source: aidp_fusion  │
+│  - POST /snapshots (.bar)       │  (2) POST      │  - workbooks: cfo_dashboard, │
+│  - POST /system/.../restore     │      /snapshot │    ar_aging, ap_aging, ...   │
+│  - GET  /workRequests/{id}      │      restore   │                              │
 └─────────────────────────────────┘                └──────────────┬───────────────┘
                                                                  │ Logical SQL
                                                                  ▼
@@ -84,7 +92,7 @@ After step 6, restart your AI client and ask "what's our AR aging?" — OAC MCP 
                                                   └──────────────────────────────┘
 ```
 
-The bundle authors content in OAC (workbooks); ships it via OAC REST API; end users consume via OAC MCP. AIDP serves the data via JDBC throughout.
+The bundle authors content in OAC (workbooks), captures it as a Custom snapshot (`.bar`) excluding per-customer secrets, ships the `.bar` as a release artifact, and installs via four documented public REST calls. End users consume via OAC MCP. AIDP serves the data via JDBC throughout.
 
 ---
 

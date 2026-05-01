@@ -80,13 +80,13 @@ oac:
   enabled: true
   url: ${OAC_URL}
   dataSourceName: aidp_fusion_jdbc
-  workbooks:
-    - cfo_dashboard
-    - ar_aging
-    - ap_aging
-    - gl_balance
-    - po_backlog
-    - supplier_spend
+  # Workbook content is delivered as a single .bar snapshot the customer uploads
+  # to their own OCI Object Storage bucket. See docs/oac_rest_api_setup.md.
+  snapshot:
+    bucket: ${OAC_BAR_BUCKET}                # e.g. "aidp-fusion-bundle-bar"
+    uri: bundle-v0.1.0a0.bar                  # object name in the bucket
+    snapshotName: aidp-fusion-bundle-v0.1.0a0
+    # password: ${vault:ocid1.vaultsecret.oc1.iad.placeholder.bar_password}  # optional
   oauthClientId: ${OAC_OAUTH_CLIENT_ID}
   oauthClientSecret: ${vault:ocid1.vaultsecret.oc1.iad.placeholder.oac_client_secret}
 

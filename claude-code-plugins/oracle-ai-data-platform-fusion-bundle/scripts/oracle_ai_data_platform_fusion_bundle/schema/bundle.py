@@ -122,11 +122,37 @@ class NotificationsSpec(BaseModel):
     on_failure: list[str] = Field(default_factory=list, alias="onFailure")
 
 
+class OacSnapshotSpec(BaseModel):
+    """Where the bundle's ``.bar`` snapshot lives in the customer's OCI tenancy."""
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    bucket: str | None = None
+    """OCI Object Storage bucket name containing the bundle's .bar."""
+
+    uri: str | None = None
+    """Object name (relative path) of the .bar within the bucket."""
+
+    password: str | None = None
+    """Optional BAR password. May be a ``${vault:OCID}`` reference."""
+
+    snapshot_name: str = Field(default="aidp-fusion-bundle", alias="snapshotName")
+    """Display name for the registered snapshot (visible in OAC Console -> Snapshots)."""
+
+
 class OacDashboardSpec(BaseModel):
     """OAC integration block under ``oac:`` in bundle.yaml.
 
-    The bundle ships ``.dva`` workbook exports under ``oac/workbooks/``; the
-    install command registers them in the customer's OAC instance via REST API.
+    Architecture (TC10h-2 refactor, 2026-05-01) — strictly Oracle-documented endpoints:
+      1. POST /api/20210901/catalog/connections             (create AIDP connection)
+      2. POST /api/20210901/snapshots                       (register customer-uploaded .bar)
+      3. POST /api/20210901/system/actions/restoreSnapshot  (async restore)
+      4. GET  /api/20210901/workRequests/{id}               (poll until SUCCEEDED)
+
+    The bundle ships a single ``.bar`` snapshot as a release artifact (built
+    once via ``bundle build-bar`` from a clean dev OAC). Customer uploads it
+    to their own OCI Object Storage bucket and grants OAC's Resource Principal
+    read access. See ``docs/oac_rest_api_setup.md``.
     """
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
@@ -136,16 +162,11 @@ class OacDashboardSpec(BaseModel):
     """OAC instance URL. May be supplied via CLI flag too."""
 
     data_source_name: str = Field(default="aidp_fusion_jdbc", alias="dataSourceName")
-    workbooks: list[str] = Field(
-        default_factory=lambda: [
-            "cfo_dashboard",
-            "ar_aging",
-            "ap_aging",
-            "gl_balance",
-            "po_backlog",
-            "supplier_spend",
-        ]
-    )
+
+    # Workbook content delivery via snapshot
+    snapshot: OacSnapshotSpec = Field(default_factory=OacSnapshotSpec)
+    """Where the bundle's .bar snapshot lives. Set ``snapshot.bucket`` + ``snapshot.uri``
+    to enable workbook restore; omit for connection-only install."""
 
     # ---- IDCS OAuth (one-time admin setup; see docs/oac_rest_api_setup.md) ----
     idcs_url: str | None = Field(default=None, alias="idcsUrl")
@@ -155,10 +176,12 @@ class OacDashboardSpec(BaseModel):
     oauth_client_secret: str | None = Field(default=None, alias="oauthClientSecret")
     """May be a ``${vault:OCID}`` reference."""
 
-    oauth_scope: str = Field(
-        default="urn:opc:resource:fawcommon:OAC",
+    oauth_scope: str | None = Field(
+        default=None,
         alias="oauthScope",
     )
+    """Override the auto-derived scope. Default: auto-discover the IDCS audience
+    from the OAC ``/ui/`` redirect, then build ``<audience>urn:opc:resource:consumer::all offline_access``."""
 
     # ---- AIDP JDBC connection params (the 6-key JSON OAC's connector needs) ----
     api_key_user_ocid: str | None = Field(default=None, alias="apiKeyUserOcid")

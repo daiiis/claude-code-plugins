@@ -63,9 +63,16 @@ Mirrors pdf1 §"What Can You Do Once the Data is in Oracle AI Data Platform":
 
 5. **Install OAC dashboards** (one-time per OAC instance):
    ```bash
-   aidp-fusion-bundle dashboard install --target oac --oac-url <https://oac.example.com>
+   # 5a. Upload the bundle's bundle-vN.bar to your OCI Object Storage bucket
+   oci os object put --bucket-name aidp-fusion-bundle-bar \
+                     --file ./bundle-v0.1.0a0.bar --name bundle-v0.1.0a0.bar
+
+   # 5b. Run the install (POST connection + register/restore snapshot + poll)
+   aidp-fusion-bundle dashboard install --target oac \
+     --oac-url https://oac.example.com \
+     --bar-bucket aidp-fusion-bundle-bar --bar-uri bundle-v0.1.0a0.bar
    ```
-   Registers the AIDP JDBC data source via OAC REST API and imports `oac/workbooks/*.dva`.
+   Uses ONLY Oracle-documented public REST endpoints: `POST /catalog/connections`, `POST /snapshots`, `POST /system/actions/restoreSnapshot`, `GET /workRequests/{id}`. See `docs/oac_rest_api_setup.md` for the one-time IDCS confidential-app + Object Storage Resource Principal setup.
 
 6. **End users chat with the data** via OAC MCP. Print the MCP config snippet:
    ```bash

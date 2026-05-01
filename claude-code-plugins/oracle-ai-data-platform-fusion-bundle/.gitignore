@@ -46,5 +46,6 @@ tests/live/results/*.json
 tests/live/results/*.png
 !tests/live/results/.gitkeep
 
-# OAC workbooks may contain pod-specific connection metadata after install
-oac/workbooks/*.local.dva
+# Locally-built bundle snapshot (release artifact, ships separately — not in repo)
+*.bar
+oac/bundle-*.bar

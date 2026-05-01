@@ -4,7 +4,7 @@
     "name": "Ahmed Awan"
   },
   "metadata": {
-    "version": "0.4.2",
+    "version": "0.5.0",
     "description": "Personal development marketplace hosting Claude Code plugins authored by Ahmed Awan. Plugins live under claude-code-plugins/<plugin-name>/, mirroring the layout in oracle-samples/oracle-aidp-samples/ai/claude-code-plugins/."
   },
   "plugins": [
@@ -31,6 +31,34 @@
         "mysql",
         "sqlserver",
         "iceberg"
+      ]
+    },
+    {
+      "name": "oracle-ai-data-platform-fusion-bundle",
+      "description": "Productized Fusion → Oracle AI Data Platform pipeline as a Claude Code plugin. Curated BICC extracts for Fusion ERP/HCM/SCM, bronze/silver/gold medallion in Delta, conformed COA/calendar/org/supplier/item dimensions, ready-made AR-aging/AP-aging/GL-balance/PO-backlog/Supplier-spend gold marts, and Oracle Analytics Cloud (OAC) workbooks installable via OAC REST API (Authorization Code + PKCE + Refresh Token). End-user consumption via OAC MCP (Preview) chat. Same pattern shown in Oracle's BICC-into-AIDP blog, productized. Additive to and complementary with Oracle FDI/OAC/OTBI/BIP — never positioned as a replacement.",
+      "version": "0.1.0-alpha",
+      "source": "./claude-code-plugins/oracle-ai-data-platform-fusion-bundle/",
+      "category": "data",
+      "keywords": [
+        "oracle",
+        "aidp",
+        "fusion",
+        "erp",
+        "hcm",
+        "scm",
+        "bicc",
+        "lakehouse",
+        "delta",
+        "medallion",
+        "bronze-silver-gold",
+        "oac",
+        "oracle-analytics-cloud",
+        "mcp",
+        "spark",
+        "saas-batch",
+        "data-engineering",
+        "genai",
+        "ai-agents"
       ]
     }
   ]

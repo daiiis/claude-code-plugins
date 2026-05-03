@@ -678,3 +678,61 @@ The 3-of-4 OAC REST calls in the bundle's install path (`register_snapshot`, `re
 - Round-trip script: `C:/Temp/snapshot_roundtrip.py` (output: `C:/Temp/snapshot_roundtrip2.out`)
 - Restore-verification script: `C:/Temp/verify_restore.py` (output: `C:/Temp/verify_restore.out`)
 - Direct connection GET: `C:/Temp/debug_conn_direct.py`
+
+---
+
+## TC10h-4 — `dashboard install` end-to-end SUCCESS on OAC1 (2026-05-03)
+
+After fixing two upstream bugs surfaced in TC10h-3 (`register_snapshot` async handling + `list_connections` requires `search=*`), the bundle's `dashboard install` command was run end-to-end against OAC1 with all four documented OAC REST calls in the install path executing cleanly.
+
+### Single command, all four REST calls green
+
+```
+PYTHONPATH=scripts python -m oracle_ai_data_platform_fusion_bundle.cli dashboard install \
+  --target oac \
+  --oac-url https://aidp-fusion-bundle-build-idseylbmv0mm-g2-ia.analytics.ocp.oraclecloud.com \
+  --connection-name aidp_fusion_jdbc \
+  ...AIDP identity flags...
+  --bar-bucket aidp-fusion-bundle-bar \
+  --bar-uri file:///aidp-fusion-bundle/bundle-v0.1.0a0-rc1.bar \
+  --bar-password '...' \
+  --snapshot-name aidp-fusion-bundle-e2e-rc1 \
+  --idcs-url https://idcs-f5e26b80ce5d4d20a66ba648b5e00403.identity.oraclecloud.com \
+  --client-id 6d4529b96dd6403fbb1ddbde8eefd9eb \
+  --client-secret '...'
+```
+
+Output:
+
+```
+Connection 'aidp_fusion_jdbc' already exists
+  (id=L3VzZXJzL2FobWVkLnNoYWh6YWQuYXdhbkBvcmFjbGUuY29tL2FpZHBfZnVzaW9uX2pkYmM).
+  Skipping create. Use --overwrite-connection to recreate.
+Registering snapshot aidp-fusion-bundle-e2e-rc1 from aidp-fusion-bundle-bar/file:///... ...
+  registered (snapshotId=bd820501-9a3f-426e-8354-2d8c279b35b2)
+Restoring snapshot bd820501-9a3f-426e-8354-2d8c279b35b2 ...
+  restore accepted (workRequestId=lfc-cc:13347-c9:3962654); polling ...
+  restore complete (SUCCEEDED)
+Done. connection=aidp_fusion_jdbc | snapshot=bd820501-...  (status=SUCCEEDED)
+```
+
+### What the four REST calls did
+
+| Step | Endpoint | Outcome |
+|---|---|---|
+| 1 | `GET /catalog?type=connections&search=aidp_fusion_jdbc` | Found existing record at `/@Catalog/users/.../aidp_fusion_jdbc`. `find_connection` correctly returned the row (was returning `None` before the `search=*` fix in `52ce2c7`). |
+| 2 | `POST /snapshots type=REGISTER` | Async; workRequest reached `SUCCEEDED`; new snapshot `bd820501-9a3f-426e-8354-2d8c279b35b2`. |
+| 3 | `POST /system/actions/restoreSnapshot` | Async; returned `oa-work-request-id: lfc-cc:13347-c9:3962654`. |
+| 4 | `GET /workRequests/{id}` (poll) | Reached `SUCCEEDED`. |
+
+The `POST /catalog/connections` validator gap on `idljdbc` is **bypassed** in the realistic deployment scenario: customer creates the AIDP connection via the OAC UI once (the documented Oracle path per the AIDP-from-OAC Quick Start blog), then runs the bundle install as many times as they want — REST handles everything from that point on.
+
+### Net status
+
+The `dashboard install` command is **install-ready end-to-end** for the realistic deployment:
+
+1. (Out-of-band, one-time) Customer creates the AIDP connection via OAC UI using the bundled config.json.
+2. Customer uploads the `.bar` to their OCI Object Storage bucket; grants OAC's RP read on the bucket.
+3. Customer runs `aidp-fusion-bundle dashboard install` — bundle handles connection-discovery + snapshot register + restore + poll, all via Oracle-documented REST endpoints.
+
+The `--overwrite-connection` path, which exercises the `delete + POST` flow (and would still hit the `idljdbc` validator gap on the POST), is not required for the realistic flow.

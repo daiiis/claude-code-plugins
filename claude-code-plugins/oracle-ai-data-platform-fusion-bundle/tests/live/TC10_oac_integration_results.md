@@ -736,3 +736,74 @@ The `dashboard install` command is **install-ready end-to-end** for the realisti
 3. Customer runs `aidp-fusion-bundle dashboard install` — bundle handles connection-discovery + snapshot register + restore + poll, all via Oracle-documented REST endpoints.
 
 The `--overwrite-connection` path, which exercises the `delete + POST` flow (and would still hit the `idljdbc` validator gap on the POST), is not required for the realistic flow.
+
+---
+
+## TC10h-5 — End-to-end with REAL workbook cargo (2026-05-03)
+
+The `dashboard install` end-to-end success in TC10h-4 used an empty 180 KB `.bar` (snapshot of an empty OAC1). TC10h-5 closes that gap by building a real workbook against real Fusion data, snapshotting it, installing it via the bundle, and verifying it renders after restore.
+
+### Real-data path proven end-to-end
+
+1. **AIDP gold mart materialized** — `fusion_catalog.gold.supplier_spend` (236 rows × 9 cols, real Fusion AP data from the saasfademo1 demo pod via BICC). 2nd gold mart `gold.ap_invoice_status` built from `silver.fact_ap_invoice` (8 status buckets aggregated from 49,985 invoices: APPROVED $3.19B, NEVER APPROVED $16.7M, NEEDS REAPPROVAL $3.46M, etc.). SQL captured at `tests/live/sql/gold_ap_invoice_status.sql`.
+
+2. **OAC dataset over JDBC** — `AIDP_Supplier_Spend` dataset created via OAC UI's "Create Dataset" → connection `aidp_fusion_jdbc` → Manual Query `SELECT * FROM fusion_catalog.gold.supplier_spend`. Profile completed; 44 rows × 9 cols visible in the OAC dataset preview with vendor IDs (`300,000,047,414,571` etc.), approval statuses, dollar amounts up to $399 M per vendor — proves the OAC → AIDP JDBC connection is live.
+
+3. **OAC workbook authored** — `Supplier_Spend_Workbook` saved at `/@Catalog/shared/AIDP_Fusion_Bundle/Supplier_Spend_Workbook` with one Bar visualization "total_invoice_amount by approval_status" (8 bars: APPROVED $3.0 B+, smaller slivers for the other 7 statuses).
+
+4. **Custom snapshot via OAC UI** — taken via Console → Snapshots → Create Snapshot ("Includes Everything"), 203 KB, password-protected. Exported to Local File System (UI did not have an OCI Resource Connection configured for Object Storage, so the direct-to-bucket path was unavailable; downloaded locally + uploaded via `oci os object put` instead).
+
+5. **Bucket upload** — `aidp-fusion-bundle-bar/aidp-fusion-bundle/bundle-v0.1.0a0-rc2.bar` (208,853 bytes).
+
+6. **`dashboard install` end-to-end** — single command, all four documented OAC REST calls green:
+   ```
+   Connection 'aidp_fusion_jdbc' already exists ... Skipping create.
+   Registering snapshot aidp-fusion-bundle-rc2-restore from
+     aidp-fusion-bundle-bar/file:///aidp-fusion-bundle/bundle-v0.1.0a0-rc2.bar ...
+     registered (snapshotId=3d4f22f9-2ad1-4944-94a2-ed582a7689a2)
+   Restoring snapshot 3d4f22f9-2ad1-4944-94a2-ed582a7689a2 ...
+     restore accepted (workRequestId=lfc-cc:13347-cs:3964246); polling ...
+     restore complete (SUCCEEDED)
+   Done. connection=aidp_fusion_jdbc | snapshot=3d4f22f9-...  (status=SUCCEEDED)
+   ```
+
+7. **Workbook visible after restore** — navigated to `/@Catalog/shared/AIDP_Fusion_Bundle/Supplier_Spend_Workbook` in OAC UI, the bar chart rendered with live data (3.0B+ on APPROVED, slivers for AVAILABLE/CANCELLED/FULL/INCOMPLETE/NEEDS REAPPROVAL/NEVER APPROVED/UNPAID). Screenshot captured at `tests/live/screenshots/TC10h-5_workbook_after_restore.png`.
+
+### What this proves
+
+The bundle's **plumbing carries real cargo**. Every link in the value chain is exercised:
+
+```
+saasfademo1 Fusion pod  ──BICC──▶  AIDP bronze
+                                       │
+                                       ▼
+                         AIDP silver (fact_ap_invoice, dim_supplier)
+                                       │
+                                       ▼
+                              AIDP gold (supplier_spend)
+                                       │ JDBC
+                                       ▼
+                       OAC dataset (AIDP_Supplier_Spend)
+                                       │
+                                       ▼
+                  OAC workbook (Supplier_Spend_Workbook)
+                                       │ Custom snapshot
+                                       ▼
+                           OCI Object Storage bucket
+                                       │ aidp-fusion-bundle dashboard install
+                                       ▼
+                       OAC1 catalog: workbook visible + chart renders
+```
+
+### Honest scope notes
+
+- **Only 1 workbook in this run** (Supplier_Spend_Workbook). The bundle's planned scope is 5 (CFO Dashboard, AR Aging, AP Aging, GL Balance, Supplier Spend). The other 4 require additional source-data work: AR aging and GL balance need new BICC extracts (no AR/GL silver/gold tables exist yet); AP aging can be built on existing silver data; CFO Dashboard is a composite. This is explicit Phase-2 work tracked separately.
+- **`Can't load models - Restore your models` warning persists on OAC1's home page** — relates to OAC's classic semantic-model layer, not the workbook layer this test exercises. Does not affect workbook rendering.
+- **Dataset live-query mode** — the dataset queries AIDP on every workbook render (not cached). Acceptable for ~50-row aggregated marts; would need cache strategy if scaling to large facts.
+
+### Artifacts (this run)
+
+- Gold mart SQL: `tests/live/sql/gold_ap_invoice_status.sql`
+- Snapshot upload: `aidp-fusion-bundle-bar/aidp-fusion-bundle/bundle-v0.1.0a0-rc2.bar` (208,853 bytes)
+- Install run output: `C:/Temp/install_e2e_rc2.out`
+- Screenshot proof: `tests/live/screenshots/TC10h-5_workbook_after_restore.png`

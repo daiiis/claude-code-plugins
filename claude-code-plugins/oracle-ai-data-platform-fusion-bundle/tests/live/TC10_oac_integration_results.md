@@ -807,3 +807,58 @@ saasfademo1 Fusion pod  ──BICC──▶  AIDP bronze
 - Snapshot upload: `aidp-fusion-bundle-bar/aidp-fusion-bundle/bundle-v0.1.0a0-rc2.bar` (208,853 bytes)
 - Install run output: `C:/Temp/install_e2e_rc2.out`
 - Screenshot proof: `tests/live/screenshots/TC10h-5_workbook_after_restore.png`
+
+---
+
+## TC10h-6 — Multi-workbook end-to-end (4 workbooks, 2026-05-04)
+
+Extends TC10h-5 from 1 workbook to 4 to demonstrate the bundle's plumbing carries multi-workbook content. Same value chain (Fusion → AIDP → OAC dataset → workbook → snapshot → install → restore), now with four distinct workbooks covering different financial-analytics angles.
+
+### Workbooks built
+
+| # | Workbook | Dataset | Source mart | Visualization |
+|---|---|---|---|---|
+| 1 | `Supplier_Spend_Workbook` | AIDP_Supplier_Spend | `gold.supplier_spend` | Bar — total_invoice_amount by approval_status |
+| 2 | `AP_Invoice_Status_Workbook` | AIDP_AP_Invoice_Status | `gold.ap_invoice_status` | Bar — total_outstanding by approval_status ($322M peak) |
+| 3 | `AP_Outstanding_Aging_Workbook` | AIDP_AP_Outstanding_Aging | `gold.ap_outstanding_by_age` | Bar — total_outstanding by age_bucket ($304M in 365+ days) |
+| 4 | `CFO_Dashboard_Workbook` | AIDP_Supplier_Spend (reused) | `gold.supplier_spend` | Tile — $3.2B total grand-total |
+
+All saved under `/@Catalog/shared/AIDP_Fusion_Bundle/`.
+
+### Snapshot + install evidence
+
+- Snapshot taken via OAC UI: `aidp-fusion-bundle-rc3` (243 KB — ~40 KB larger than rc2's 203 KB, accounting for the 3 additional workbooks).
+- `.bar` exported to local file system, uploaded to OCI Object Storage as `aidp-fusion-bundle-bar/aidp-fusion-bundle/bundle-v0.1.0a0-rc3.bar` (249,633 bytes).
+- `dashboard install` end-to-end:
+  - Connection precheck: `aidp_fusion_jdbc` exists → skipped POST
+  - REGISTER (async): snapshot `8a19488d-feb0-479c-94c3-3ff4f361a65a`
+  - RESTORE: workRequest `lfc-cc:13347-cv:3979540`
+  - Poll: `SUCCEEDED`
+- Verification (REST `GET /catalog?type=workbooks&search=*`):
+  ```
+  HTTP 200, Total workbooks visible: 4
+    [0] AP_Invoice_Status_Workbook  path=/@Catalog/shared/AIDP_Fusion_Bundle/AP_Invoice_Status_Workbook
+    [1] AP_Outstanding_Aging_Workbook  path=/@Catalog/shared/AIDP_Fusion_Bundle/AP_Outstanding_Aging_Workbook
+    [2] CFO_Dashboard_Workbook  path=/@Catalog/shared/AIDP_Fusion_Bundle/CFO_Dashboard_Workbook
+    [3] Supplier_Spend_Workbook  path=/@Catalog/shared/AIDP_Fusion_Bundle/Supplier_Spend_Workbook
+  ```
+
+### Built additional gold mart this run
+
+`fusion_catalog.gold.ap_outstanding_by_age` — 5 age buckets (0-30, 31-60, 91-180, 181-365, 365+ days) over UNPAID, non-cancelled AP invoices from `silver.fact_ap_invoice`. Real aging data: 365+ days bucket has $304M outstanding across 9,556 invoices and 75 suppliers. SQL: `tests/live/sql/gold_ap_outstanding_by_age.sql`.
+
+### Honest scope note: AR aging + GL balance still skipped
+
+The bundle's planned 5 workbooks include AR Aging (Receivables) and GL Balance. Neither is built here because:
+- saasfademo1 BICC extracts for AR (AR transaction PVOs) and GL (GLBalance/JournalLines/COA PVOs) have not been run; no AR/GL bronze/silver/gold tables exist in `fusion_catalog.*`.
+- Building these is a multi-hour Phase-2 task: BICC scope-set + extract + medallion + workbook authoring per source.
+
+The 4 workbooks shipped here are the ones buildable on existing AP-side silver data.
+
+### Net status
+
+**Bundle's plumbing is multi-workbook proven end-to-end with real Fusion data.** Customer flow: create AIDP connection in OAC UI once → re-run `dashboard install` after each new release of `bundle-vN.bar`. Each install is one CLI command, all four documented OAC REST calls green, all workbooks visible in `/shared/AIDP_Fusion_Bundle/` after restore.
+
+### Related: 'Can't load models' warning is cosmetic
+
+The OAC home page's `Can't load models - Restore your models` warning persists across all TC10h runs. Verified during research that this refers to OAC's classic-RPD semantic-model layer (not the modern self-service Datasets-from-Connections layer the bundle uses). On a fresh OAC instance with no classic content uploaded, the warning is expected and does not affect any of the bundle's workflows. Documented in `docs/oac_rest_api_setup.md` troubleshooting section.

@@ -249,6 +249,10 @@ The URI shape must be exactly `file:///<folder>/<name>.bar`. Common mistakes:
 - `https://objectstorage.<region>.oraclecloud.com/n/<ns>/b/<bucket>/o/<object>` — wrong; pre-authenticated request URLs aren't accepted either.
 - The bundle expects you to upload with a folder-prefixed name (e.g. `--name aidp-fusion-bundle/bundle-v0.1.0a0.bar`) and pass `--bar-uri 'file:///aidp-fusion-bundle/bundle-v0.1.0a0.bar'`.
 
+### `Can't load models - Restore your models` warning on OAC home page
+
+This warning shows up on the OAC home page's Datasets row alongside a "Subject Area" icon. It refers to OAC's **classic semantic model** layer (RPD-based subject areas), not the modern self-service Datasets-from-Connections layer that this bundle uses. On a fresh OAC instance with no classic RPD uploaded, the warning is **cosmetic** — modern workbooks built on Datasets-from-Connections (which is the bundle's path) work fine despite it. The warning only matters if you also need classic Subject Areas (e.g. for OBIEE/OAC-Classic migration). The "Restore your models" action points to Console → Snapshots to restore a previous instance state that had a working classic model. Verified on OAC1 during TC10h-5 (2026-05-03): warning was present throughout, did not affect dataset-creation, workbook-authoring, snapshot capture/restore, or the bundle's `dashboard install` end-to-end success. Sources: [Oracle Analytics community thread](https://community.oracle.com/products/oracleanalytics/discussion/25759/cant-load-models-restore-your-models), [About Snapshots docs](https://docs.oracle.com/en/cloud/paas/analytics-cloud/acabi/snapshots.html).
+
 ### `find_connection` returns `None` even though the connection exists
 
 Old client versions called `GET /catalog?type=connections` without a `search` parameter, which OAC answers with a single-element TypeInfo header (`[{"type":"connections"}]`) — not the actual list. Fixed in `52ce2c7` (TC10h-3): `list_connections` now defaults `search="*"`. Upgrade the bundle if you see this on a build older than 2026-05-03.

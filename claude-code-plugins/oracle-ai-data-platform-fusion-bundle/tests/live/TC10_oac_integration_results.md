@@ -862,3 +862,89 @@ The 4 workbooks shipped here are the ones buildable on existing AP-side silver d
 ### Related: 'Can't load models' warning is cosmetic
 
 The OAC home page's `Can't load models - Restore your models` warning persists across all TC10h runs. Verified during research that this refers to OAC's classic-RPD semantic-model layer (not the modern self-service Datasets-from-Connections layer the bundle uses). On a fresh OAC instance with no classic content uploaded, the warning is expected and does not affect any of the bundle's workflows. Documented in `docs/oac_rest_api_setup.md` troubleshooting section.
+
+---
+
+## TC10h-7 — Full 6-workbook scope on a NEW Fusion pod (eseb-test, 2026-05-05)
+
+TC10h-6 closed the AP-side scope (4 workbooks). TC10h-7 closes the **AR + GL** gaps with a brand-new Fusion ERP/BICC environment to live-prove the bundle from scratch — fresh BICC External Storage setup, fresh extracts, two new silver/gold mart pairs, two new workbooks (5th and 6th), then snapshot → install → verify all 6 workbooks via REST.
+
+### Why a new environment
+
+The TC10h-1..6 work used the dev5 saasfademo1 pod (Casey.Brown). For TC10h-7 the user provided fresh access to **eseb-test saasfademo1** with `natalie.salesrep` — a completely different demo pod with different data, different ledgers, and a never-before-configured BICC. This makes the run a true live-from-scratch validation, not an incremental add-on to the previous test data.
+
+| Resource | Value |
+|---|---|
+| Fusion ERP | `https://fa-eseb-test-saasfademo1.ds-fa.oraclepdemos.com/fscmUI/...` |
+| Fusion BICC | `https://fa-eseb-test-saasfademo1.ds-fa.oraclepdemos.com/biacm/faces/setup` |
+| User | `natalie.salesrep` (BIAdmin role intact, verified live) |
+| External Storage profile | `fusion_bicc_external_storage` (newly configured via UI driving) |
+| OCI bucket backing it | `fusion-bicc-saasfademo1` (us-ashburn-1) |
+| OCI API key | Auto-generated within the BICC console form (NOT an OCI Auth Token — different mechanism); 90s propagation delay before BICC's Test Connection succeeded |
+
+### What was built
+
+| Layer | Tables / objects | Live row counts |
+|---|---|---|
+| Bronze (BICC extracts) | `bronze.ar_invoices`, `bronze.ar_receipts`, `bronze.gl_period_balances`, `bronze.gl_coa`, `bronze.gl_journal_headers` | 187,970 / 64,007 / 11,211,211 / 63,464 / 89,108 |
+| Silver | `silver.fact_ar_invoice`, `silver.fact_ar_receipt`, `silver.fact_gl_balance`, `silver.dim_account` | 187,970 / 64,007 / 10,184,102 / 63,464 |
+| Gold marts | `gold.ar_aging`, `gold.gl_balance_summary` | 2 / 10,342 |
+| OAC datasets | `AIDP_AR_Aging`, `AIDP_GL_Balance` (over `aidp_fusion_jdbc`) | both visible |
+| **Workbooks 5+6** | **`AR_Aging_Workbook`**, **`GL_Balance_Workbook`** | both saved at `/shared/AIDP_Fusion_Bundle/` |
+
+The full file set: `tests/live/sql/extract_ar_gl_bicc.py` (5-PVO extractor), `tests/live/sql/silver_ar_gl.sql`, `tests/live/sql/gold_ar_aging.sql`, `tests/live/sql/gold_gl_balance_summary.sql`. Column names in silver SQL are the actual saasfademo1 BICC convention (RaCustomerTrx*, ArCashReceipt*, Balance*, CodeCombination*) — confirmed live.
+
+### Data quality note
+
+Of 187,970 AR transaction headers, only 923 carry `due_date` and 270 carry `billing_date` — the bulk of aging-driving timestamps live on `ReceivablesPaymentScheduleExtractPVO` (per-installment), not the header. `gold.ar_aging` therefore buckets by `created_at` as a header-level age proxy. This is documented inline in `silver_ar_gl.sql` and produces 2 buckets (`5. 181-365 days` = 3,059 invoices, `6. 365+ days` = 184,333 invoices). For pixel-perfect aging, add the schedule PVO to the extract list — out of scope for this test.
+
+### Workbook 6: GL_Balance_Workbook
+
+A Tile KPI showing `total_period_dr = 204,204,662,548.8` ($204.2B) — the grand total across all currencies, all periods, all companies. Backed by 10,342 real `gold.gl_balance_summary` rows aggregated from 10,184,102 silver-layer GL period balances.
+
+### rc4 snapshot → install → verify
+
+`bundle-v0.1.0a0-rc4.bar` (292,615 bytes) was created via OAC Console UI → Create Snapshot (Everything mode) → Export to Local FS, then uploaded to `oci://idseylbmv0mm@aidp-fusion-bundle-bar/aidp-fusion-bundle/bundle-v0.1.0a0-rc4.bar`.
+
+`dashboard install` ran end-to-end clean:
+
+```
+Connection 'aidp_fusion_jdbc' already exists. Skipping create.
+Registering snapshot aidp-fusion-bundle-rc4-restore from
+aidp-fusion-bundle-bar/file:///aidp-fusion-bundle/bundle-v0.1.0a0-rc4.bar ...
+  registered (snapshotId=9ab6498c-61ff-4523-9834-ac69e3064bc6)
+Restoring snapshot 9ab6498c-61ff-4523-9834-ac69e3064bc6 ...
+  restore accepted (workRequestId=lfc-cc:13347-cj:4001268); polling ...
+  restore complete (SUCCEEDED)
+Done. status=SUCCEEDED
+```
+
+### Verify — all 6 workbooks visible via REST
+
+```
+=== GET /catalog?type=workbooks&search=* ===
+HTTP 200
+Total workbooks visible (all): 6
+Workbooks in /shared/AIDP_Fusion_Bundle/: 6
+  [0] AP_Invoice_Status_Workbook
+  [1] AP_Outstanding_Aging_Workbook
+  [2] AR_Aging_Workbook         ← new in TC10h-7
+  [3] CFO_Dashboard_Workbook
+  [4] GL_Balance_Workbook       ← new in TC10h-7
+  [5] Supplier_Spend_Workbook
+```
+
+### Net status
+
+**Bundle's plumbing is now proven end-to-end with the full intended 6-workbook scope, against a never-before-touched Fusion pod.** Every step that a customer would do — set up BICC External Storage on their own bucket, run BICC extracts via the `aidataplatform` Spark format, build silver/gold medallion marts, author workbooks in OAC, snapshot the workbook bundle, run `dashboard install` against their OAC instance, verify catalog visibility via REST — was performed live in this single session.
+
+### Live evidence trail (for audit)
+
+| Artifact | Location |
+|---|---|
+| Install output | `C:/Temp/install_e2e_rc4.out` (in author's local env) |
+| Verify output | `C:/Temp/verify_6_workbooks.py` + run output |
+| BAR file | `oci://idseylbmv0mm@aidp-fusion-bundle-bar/aidp-fusion-bundle/bundle-v0.1.0a0-rc4.bar` (292,615 bytes) |
+| Snapshot ID on OAC1 | `9ab6498c-61ff-4523-9834-ac69e3064bc6` |
+| Work request | `lfc-cc:13347-cj:4001268` (SUCCEEDED) |
+| Connection ID | `L3VzZXJzL2FobWVkLnNoYWh6YWQuYXdhbkBvcmFjbGUuY29tL2FpZHBfZnVzaW9uX2pkYmM` |

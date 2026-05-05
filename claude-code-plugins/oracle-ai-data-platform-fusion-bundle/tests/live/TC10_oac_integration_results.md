@@ -948,3 +948,21 @@ Workbooks in /shared/AIDP_Fusion_Bundle/: 6
 | Snapshot ID on OAC1 | `9ab6498c-61ff-4523-9834-ac69e3064bc6` |
 | Work request | `lfc-cc:13347-cj:4001268` (SUCCEEDED) |
 | Connection ID | `L3VzZXJzL2FobWVkLnNoYWh6YWQuYXdhbkBvcmFjbGUuY29tL2FpZHBfZnVzaW9uX2pkYmM` |
+
+### TC10h-7 follow-on: GL_Balance_Workbook polish (2026-05-05)
+
+The original TC10h-7 GL_Balance_Workbook was a single Tile KPI ($204.2B `total_period_dr`). User feedback: too basic. Reauthored as a richer visualization — **60-box Treemap** sized by `total_period_dr`, colored by `company`. Largest box: $7.76B (3.8% of total) for company `942`. The Treemap surfaces inter-company concentration that a flat KPI hides.
+
+Re-snapshotted as `aidp-fusion-bundle-rc5`, exported, uploaded, and re-installed via REST end-to-end — all four documented OAC REST calls green:
+
+```
+Connection 'aidp_fusion_jdbc' already exists. Skipping create.
+Registering snapshot aidp-fusion-bundle-rc5-restore from
+aidp-fusion-bundle-bar/file:///aidp-fusion-bundle/bundle-v0.1.0a0-rc5.bar ...
+  registered (snapshotId=e3736a90-b55c-4a6b-a5e8-2fc8654fb747)
+Restoring snapshot e3736a90-b55c-4a6b-a5e8-2fc8654fb747 ...
+  restore accepted (workRequestId=lfc-cc:13347-cc:4004921); polling ...
+  restore complete (SUCCEEDED)
+```
+
+REST verify confirms all 6 workbooks still visible after the rc5 restore (the new Treemap viz round-trips cleanly through snapshot/restore).

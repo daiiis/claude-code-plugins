@@ -134,7 +134,7 @@ def _probe_bicc(bundle: Bundle, results: list[_ProbeResult]) -> None:
 
     url = pod_url + "/biacm/rest/meta/datastores"
     try:
-        response = requests.get(url, auth=(user, pwd), timeout=30)
+        response = requests.get(url, auth=(user, pwd), timeout=120)
     except requests.RequestException as exc:
         results.append(_ProbeResult("bicc-auth", "FAIL", f"network error: {exc}"))
         return
@@ -232,6 +232,12 @@ def _extract_datastore_names(body) -> set[str]:
                 val = node.get(key)
                 if isinstance(val, str):
                     names.add(val)
+            for key in ("dataStores", "datastores"):
+                val = node.get(key)
+                if isinstance(val, list):
+                    for item in val:
+                        if isinstance(item, str):
+                            names.add(item)
             for v in node.values():
                 visit(v)
         elif isinstance(node, list):

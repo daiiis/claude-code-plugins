@@ -195,7 +195,7 @@ def _probe_aidp(env, results: list[_ProbeResult]) -> None:
 
     region = env.region or config.get("region", "us-ashburn-1")
     workspace_key = env.workspace_key
-    api_base = f"https://{workspace_key}.aidataplatform.{region}.oci.oraclecloud.com"
+    api_base = f"https://{workspace_key}.datalake.oci.oraclecloud.com"
     try:
         signer = oci.signer.Signer(
             tenancy=config["tenancy"],

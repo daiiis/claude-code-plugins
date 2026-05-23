@@ -172,31 +172,23 @@ def _run_via_aidp_dispatch(
     mode: str,
     console: Console,
 ) -> int:
-    """Submit one AIDP REST job per dataset.
+    """Submit the bundle's bronze pipeline to AIDP via the REST job API.
 
-    The bundle ships ``notebooks/run_orchestrator.ipynb`` (TODO) which is
-    the per-dataset entry point. Until that notebook is published, this
-    command prints the dispatch plan so the user can run it manually.
+    Delegates to :func:`dispatch.dispatch_run`, which owns the seven-phase
+    laptop-side flow (resolve coords → auto-start cluster → build wheel
+    → upload notebook → create job → poll → fetch + render marker).
+    Returns its exit code unchanged.
     """
-    console.print(
-        f"[bold]Dispatch plan[/bold] (env=[cyan]{env_name}[/cyan], mode=[cyan]{mode}[/cyan]):"
+    from ..dispatch import dispatch_run
+
+    return dispatch_run(
+        bundle_path=bundle_path,
+        config_path=config_path,
+        env_name=env_name,
+        mode=mode,
+        datasets=dataset_ids or None,
+        console=console,
     )
-    table = Table()
-    table.add_column("dataset", style="cyan")
-    table.add_column("would dispatch")
-    for dsid in dataset_ids:
-        table.add_row(
-            dsid,
-            f"AIDP job: notebooks/run_orchestrator.ipynb "
-            f"--params dataset_id={dsid} mode={mode}",
-        )
-    console.print(table)
-    console.print(
-        "\n[yellow]NOTE:[/yellow] dispatch submission is wired only when "
-        "[cyan]notebooks/run_orchestrator.ipynb[/cyan] exists in the workspace. "
-        "Today, run those commands manually inside an AIDP notebook session."
-    )
-    return 0
 
 
 __all__ = ["run", "status"]

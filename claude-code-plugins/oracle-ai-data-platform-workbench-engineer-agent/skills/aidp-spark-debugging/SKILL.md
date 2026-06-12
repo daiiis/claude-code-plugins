@@ -45,7 +45,7 @@ Optional log filters: `logLevel`, `subjectContains`, `eventType`, `thread`, `exe
 Run a cell on the target cluster that reads the live Spark REST API. The helper mints a UPST from the
 api_key DEFAULT profile (no MCP, no AIDP_SESSION):
 ```bash
-python scripts/aidp_sql.py \
+python "$PLUGIN_DIR/scripts/aidp_sql.py" \
   --region <region> --datalake <OCID> --workspace <ws> --cluster <KEY> \
   --code "import json,ssl,urllib.request as u; ctx=ssl._create_unverified_context(); base=spark.sparkContext.uiWebUrl+'/api/v1'; opn=lambda p: json.load(u.urlopen(p,context=ctx)); apps=opn(base+'/applications'); app=apps[0]['id']; print(json.dumps(opn(base+'/applications/'+app+'/jobs'), default=str))"
 ```

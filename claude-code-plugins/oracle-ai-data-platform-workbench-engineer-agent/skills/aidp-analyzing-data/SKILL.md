@@ -29,7 +29,7 @@ possible, then executing Spark SQL via the bundled `scripts/aidp_sql.py` helper.
 4. **Execute.** Run the SQL via the bundled helper — it mints a UPST from the api_key DEFAULT profile and
    auto-creates a scratch notebook on the target cluster (no MCP, no AIDP_SESSION required):
    ```bash
-   python scripts/aidp_sql.py \
+   python "$PLUGIN_DIR/scripts/aidp_sql.py" \
      --region <region> --datalake <DATALAKE_OCID> --workspace <ws> --cluster <cluster-key> \
      --code "spark.sql('''<SQL>''').show(50, truncate=False)"
    ```

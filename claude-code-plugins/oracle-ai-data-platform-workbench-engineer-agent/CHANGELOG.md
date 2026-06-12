@@ -30,7 +30,7 @@ All notable changes to this plugin are documented here. Format loosely follows
 - **Publish polish** — surfaced session-token in `plugin.json`/`marketplace.json` descriptions/keywords; bumped
   to 0.5.0 (above main's 0.4.7); `claude plugin validate . --strict` passes; LICENSE (MIT) present. Deferred
   to main's 0.4.7 directory-card presentation (no `displayName`/`author` override).
-- Adds the SDK-coverage-parity **design spec** under `docs/superpowers/specs/`.
+- Authored an SDK-coverage-parity **design spec** (kept in the source repo; not shipped in the public plugin tree).
 
 ## [0.4.7] — 2026-06-12 (directory listing: publish-ready copy + attribution)
 
@@ -533,7 +533,7 @@ Tested the "new user with no MCP configured" path and closed the gap:
 - `aidp-engineer-bootstrap` + README now lead with `claude mcp add aidp -- uvx aidp-mcp` (zero-install) as
   the preferred command, with `uvx --from git+…repo aidp-mcp` / `python -m aidp_agent.mcp_server` as the
   works-now fallbacks until the package is on PyPI.
-- Added [docs/PUBLISHING.md](./docs/PUBLISHING.md): owner-run, one-time runbook to publish `aidp-agent`
+- Added `docs/PUBLISHING.md` (source-repo only; not shipped in the public tree): owner-run, one-time runbook to publish `aidp-agent`
   (entry point `aidp-mcp`) to PyPI — add LICENSE (UPL-1.0), polish `pyproject`, then GitHub Actions
   **Trusted Publishing** (tag-triggered, no tokens) or manual `twine upload`.
 - **Note:** the Claude Code agent is barred from publishing a private repo to public PyPI

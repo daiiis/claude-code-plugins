@@ -47,7 +47,7 @@ Spark-SQL cells run on a Spark kernel over **WebSocket** (Jupyter v5.3) — a pr
 raw-request` (HTTP) can't speak. The plugin ships its own helper for this, so no MCP is needed:
 
 ```
-python scripts/aidp_sql.py \
+python "$PLUGIN_DIR/scripts/aidp_sql.py" \
   --region <r> --datalake <DATALAKE_OCID> --workspace <ws> \
   --cluster <cluster-key> --code "spark.sql('SELECT 1').show()" \
   [--profile DEFAULT] [--session-profile AIDP_SESSION] [--timeout 180]

@@ -21,7 +21,7 @@ server is required.
 2. Run bounded profiling SQL via the helper (one cell per call; the scratch notebook + kernel are managed
    for you):
    ```bash
-   python scripts/aidp_sql.py --region <r> --datalake <ocid> --workspace <ws> --cluster <key> \
+   python "$PLUGIN_DIR/scripts/aidp_sql.py" --region <r> --datalake <ocid> --workspace <ws> --cluster <key> \
      --code "spark.sql('''<profiling SQL>''').show(50, truncate=False)"
    ```
    - **Overview:** `SELECT COUNT(*) FROM t` (flag if LARGE; sample for the rest).

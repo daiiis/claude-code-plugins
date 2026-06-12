@@ -67,7 +67,7 @@ auto-creates a scratch notebook if needed, opens the kernel session, runs the ce
 and returns JSON. **No `AIDP_SESSION` required** (`--session-profile` is optional).
 
 ```bash
-python scripts/aidp_sql.py \
+python "$PLUGIN_DIR/scripts/aidp_sql.py" \
   --region us-ashburn-1 --datalake <OCID> --workspace <WS> --cluster <cluster-key> \
   --code "df = spark.sql('SELECT 1'); df.show()"
 # optional: --notebook "Shared/_aidp_sql_scratch.ipynb" --profile DEFAULT \

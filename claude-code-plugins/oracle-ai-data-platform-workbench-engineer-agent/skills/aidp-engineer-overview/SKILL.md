@@ -81,7 +81,7 @@ does not require a bootstrap of any MCP server to run.
      as the CLI, so it is a drop-in when the CLI isn't installed or doesn't expose the op (e.g. full Git,
      agent-flow authoring). Do NOT invent endpoints — use the references.
   - **Interactive Spark-SQL / notebook cells** run via the bundled helper:
-    `python scripts/aidp_sql.py --region <r> --datalake <ocid> --workspace <ws> --cluster <key>
+    `python "$PLUGIN_DIR/scripts/aidp_sql.py" --region <r> --datalake <ocid> --workspace <ws> --cluster <key>
     --code <python/spark code>`. It mints a UPST from the api_key DEFAULT profile, auto-creates a scratch
     notebook, and returns JSON (`status` / `outputs` / `spark_job_ids`). No `AIDP_SESSION` required;
     `--session-profile` is optional. Use a `SELECT 1` cell as the trivial smoke test.

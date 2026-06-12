@@ -27,7 +27,7 @@ with the bundled helper — no MCP and no `ai-data-engineer-agent` repo required
 2. Ensure the cluster is RUNNING (`aidp-cluster-ops` / `oci raw-request`), then for each rule run the
    violation-count SQL with the bundled helper (PASS if 0, else FAIL):
    ```bash
-   python scripts/aidp_sql.py --region <region> --datalake <DATALAKE_OCID> --workspace <ws> \
+   python "$PLUGIN_DIR/scripts/aidp_sql.py" --region <region> --datalake <DATALAKE_OCID> --workspace <ws> \
      --cluster <cluster-key> \
      --code "spark.sql('''SELECT COUNT(*) AS v FROM cat.sch.t WHERE col IS NULL''').show()"
    ```

@@ -24,7 +24,7 @@ If any check fails, keep `verified: false` (DRAFT) and explain why — never aut
 2. Prefer logical names from `.aidp/semantic.md`; record the physical tables touched.
 3. **Validate** by running the SQL on the cluster with the bundled helper (no MCP required):
    ```bash
-   python scripts/aidp_sql.py \
+   python "$PLUGIN_DIR/scripts/aidp_sql.py" \
      --region <region> --datalake <DATALAKE_OCID> --workspace <ws> --cluster <cluster-key> \
      --code "spark.sql('''<your SELECT … LIMIT 50>''').show(50, truncate=False)"
    ```

@@ -11,7 +11,7 @@ the private `ai-data-engineer-agent` repo or any MCP server. Engine precedence (
   github.com/oracle-samples/aidataplatform-sdk). Maps 1:1 to the skills; install it if you can (Step 2b).
 - **Control-plane — fallback: `oci raw-request`** against the same REST API (works with only the oci CLI;
   `references/oci-raw-request.md`, `references/no-mcp-rest-map.md`). Same endpoint + auth as the CLI.
-- **Interactive Spark-SQL / notebook cells** → the bundled helper `python scripts/aidp_sql.py` (mints a UPST
+- **Interactive Spark-SQL / notebook cells** → the bundled helper `python "$PLUGIN_DIR/scripts/aidp_sql.py"` (mints a UPST
   from the api_key DEFAULT profile, auto-creates a scratch notebook, runs the cell — the CLI/SDK can't exec cells).
 
 ## When to use
@@ -36,9 +36,17 @@ oci iam region list --profile DEFAULT >/dev/null && echo "DEFAULT profile OK" ||
 
 ## Step 2 — Install the bundled Python deps
 The only code in this plugin is `scripts/aidp_sql.py`; it needs `oci`, `requests`, `websocket-client`,
-`cryptography`:
+`cryptography`.
+
+> **Resolve `$PLUGIN_DIR` first** — after `claude plugin install` the plugin lives under Claude's plugins
+> dir, **not** your project cwd, so the helper must be called by absolute path. Set it once:
+> `export PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT}"` (Claude sets `CLAUDE_PLUGIN_ROOT` for this plugin), or run
+> `claude plugin list`, copy the install path, and `export PLUGIN_DIR=<that path>`. Every `aidp_sql.py`
+> example in these skills uses `"$PLUGIN_DIR/scripts/aidp_sql.py"`. (On a clean first session the SessionStart
+> hook already auto-installs the deps; the manual step below is only a fallback.)
+
 ```bash
-python -m pip install -r scripts/requirements.txt     # from the plugin root
+python -m pip install -r "$PLUGIN_DIR/scripts/requirements.txt"
 ```
 
 ## Step 2b — (Preferred) install the official `aidp` CLI
@@ -98,7 +106,7 @@ Never hardcode these into committed files.
 2. **Interactive SQL** (`scripts/aidp_sql.py`) — pick an ACTIVE cluster
    (`GET /workspaces/<ws>/clusters`), then run a trivial cell:
    ```bash
-   python scripts/aidp_sql.py \
+   python "$PLUGIN_DIR/scripts/aidp_sql.py" \
      --region <region> --datalake <DATALAKE_OCID> --workspace <ws> --cluster <cluster-key> \
      --code "spark.sql('SELECT 1').show()"
    ```

@@ -30,7 +30,7 @@ pass `workspace_id` / `workspace_name` when the default workspace isn't the targ
 `nb_list_sessions` · `nb_create_session` · `nb_patch_session` · `nb_delete_session` · `nb_execute_code`
 
 > **Spark SQL does NOT require these.** The plugin's own path is the bundled helper:
-> `python scripts/aidp_sql.py --region <r> --datalake <ocid> --workspace <ws> --cluster <key>
+> `python "$PLUGIN_DIR/scripts/aidp_sql.py" --region <r> --datalake <ocid> --workspace <ws> --cluster <key>
 > --code "<python/spark code>"` (mints a UPST from the api_key DEFAULT profile, auto-creates a scratch
 > notebook, returns JSON with status/outputs/spark_job_ids — no MCP, no `AIDP_SESSION`). Smoke test:
 > a `SELECT 1` cell.

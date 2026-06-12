@@ -85,7 +85,7 @@ helper (no MCP required), and records the last pass/fail result — the same "tr
 ## Re-run rules (used by `aidp-data-quality`)
 1. For each rule, run its `violation-sql` via the bundled helper:
    ```bash
-   python scripts/aidp_sql.py --region <region> --datalake <DATALAKE_OCID> --workspace <ws> \
+   python "$PLUGIN_DIR/scripts/aidp_sql.py" --region <region> --datalake <DATALAKE_OCID> --workspace <ws> \
      --cluster <cluster-key> \
      --code "spark.sql('''<violation-sql>''').show()"
    ```

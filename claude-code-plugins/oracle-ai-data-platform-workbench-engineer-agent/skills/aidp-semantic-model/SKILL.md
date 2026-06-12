@@ -24,7 +24,7 @@ real-world NL-to-SQL accuracy is low.
    SQL expressions), joins (with cardinality), synonyms, value dictionaries.
 3. **Never invent** columns/values — read them from the catalog or confirm with the user.
 4. Optionally validate a metric by running its SQL on a small sample — hand off to `aidp-analyzing-data`,
-   which executes Spark SQL via `python scripts/aidp_sql.py` (no MCP required).
+   which executes Spark SQL via `python "$PLUGIN_DIR/scripts/aidp_sql.py"` (no MCP required).
 5. Keep the per-domain working set small and focused.
 
 ## AIDP native Ontologies (related feature — UI-driven)

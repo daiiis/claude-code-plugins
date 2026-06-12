@@ -145,7 +145,7 @@ inside a task, see `oidlUtils.notebook.run/exit` in `aidp-notebooks`.
 ## Interactive SQL (only if a task needs a quick check)
 For ad-hoc Spark-SQL outside a job, use the bundled helper — no MCP required:
 ```bash
-python scripts/aidp_sql.py --region <r> --datalake <DATALAKE_OCID> --workspace <WS> \
+python "$PLUGIN_DIR/scripts/aidp_sql.py" --region <r> --datalake <DATALAKE_OCID> --workspace <WS> \
   --cluster <key> --code "spark.sql('SELECT 1').show()"
 ```
 It mints a UPST from the api_key DEFAULT profile and returns JSON (status/outputs/spark_job_ids).

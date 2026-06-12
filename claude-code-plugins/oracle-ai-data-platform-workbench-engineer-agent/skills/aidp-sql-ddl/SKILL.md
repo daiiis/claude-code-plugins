@@ -30,7 +30,7 @@ Every statement here **changes state**. Before running any DML/DDL:
 
 ## Execute (same helper as analyzing-data)
 ```bash
-python scripts/aidp_sql.py \
+python "$PLUGIN_DIR/scripts/aidp_sql.py" \
   --region <region> --datalake <DATALAKE_OCID> --workspace <ws> --cluster <cluster-key> \
   --code "spark.sql('''<SQL>''')"
 ```

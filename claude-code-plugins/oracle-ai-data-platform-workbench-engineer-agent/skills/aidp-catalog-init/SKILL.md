@@ -72,7 +72,7 @@ oci raw-request --http-method GET --target-uri "$B/tables?catalogKey=<cat>&schem
   off by default — it costs compute and needs a running cluster):
 
   ```bash
-  python scripts/aidp_sql.py --region <r> --datalake <DATALAKE_OCID> --workspace <ws> --cluster <key> \
+  python "$PLUGIN_DIR/scripts/aidp_sql.py" --region <r> --datalake <DATALAKE_OCID> --workspace <ws> --cluster <key> \
     --code "spark.sql('SELECT COUNT(*) AS n FROM <cat>.<schema>.<table>').show()"
   ```
 

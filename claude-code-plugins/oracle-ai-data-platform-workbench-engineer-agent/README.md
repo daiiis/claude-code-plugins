@@ -3,6 +3,10 @@
 > **Run your entire AI data platform in English** — one agent for the whole Oracle AI Data Platform
 > Workbench: discover, query, build, govern, and ship guarded AI, all in natural language.
 
+> **Canonical home:** [`oracle-samples/oracle-aidp-samples/ai/claude-code-plugins/oracle-ai-data-platform-workbench-engineer-agent`](https://github.com/oracle-samples/oracle-aidp-samples/tree/main/ai/claude-code-plugins/oracle-ai-data-platform-workbench-engineer-agent).
+> End users install via Anthropic's community marketplace (see [Install](#install)), which sources from this
+> canonical Oracle-org location; `ahmedawan-oracle/claude-code-plugins` is a personal pre-release mirror.
+
 Operate the entire Oracle AI Data Platform (AIDP) Workbench in natural language — a **37-skill** agent
 (not a single-engine orchestrator). It discovers your catalog into a grounding cache (FK/join hints +
 per-column value dictionaries), turns plain English into accurate Spark SQL, runs the full lakehouse SQL
@@ -79,15 +83,20 @@ see [references/aidp-cli-map.md](./references/aidp-cli-map.md)):
 >    `python -m pip install -r scripts/requirements.txt`, path relative to the plugin root, not your cwd).
 > 3. That's it. There is **no AIDP MCP to install or register.** An MCP is an optional accelerator only.
 
+From Anthropic's community plugin marketplace (recommended — sources from the canonical Oracle-org home):
+
 ```bash
-# Current home — the personal umbrella marketplace (pre-release):
+claude plugin marketplace add anthropics/claude-plugins-community
+claude plugin install  oracle-ai-data-platform-workbench-engineer-agent
+```
+> Helper deps auto-install on first session (SessionStart hook) — no manual `pip` needed.
+
+Or from the personal development mirror (latest pre-release commits):
+
+```bash
 claude plugin marketplace add ahmedawan-oracle/claude-code-plugins
 claude plugin install  oracle-ai-data-platform-workbench-engineer-agent@oracle-ai-data-platform-workbench-suite
 ```
-> Helper deps auto-install on first session (SessionStart hook) — no manual `pip` needed.
-> **Canonical home (coming):** once this lands in `oracle-samples/oracle-aidp-samples/ai/claude-code-plugins/`,
-> end users install from the community marketplace — `claude plugin marketplace add anthropics/claude-plugins-community`
-> then `claude plugin install oracle-ai-data-platform-workbench-engineer-agent`.
 
 Then run the one-time bootstrap and catalog discovery:
 
@@ -106,7 +115,7 @@ and notebook cells use the bundled helper, which speaks the Jupyter v5.3 WebSock
 HTTP `oci raw-request` can't:
 
 ```bash
-python scripts/aidp_sql.py \
+python "$PLUGIN_DIR/scripts/aidp_sql.py" \
   --region us-ashburn-1 --datalake <DATALAKE_OCID> --workspace <WS_ID> \
   --cluster <CLUSTER_KEY> --code "spark.sql('SELECT 1').show()" \
   [--profile DEFAULT] [--session-profile AIDP_SESSION] [--timeout 180]
@@ -164,8 +173,8 @@ PLUGIN: oracle-ai-data-platform-workbench-engineer-agent (37 skills)
 
 ### One-time setup (install + 2 commands)
 ```
-claude plugin marketplace add ahmedawan-oracle/claude-code-plugins
-claude plugin install  oracle-ai-data-platform-workbench-engineer-agent@oracle-ai-data-platform-workbench-suite
+claude plugin marketplace add anthropics/claude-plugins-community     # (dev mirror: ahmedawan-oracle/claude-code-plugins)
+claude plugin install  oracle-ai-data-platform-workbench-engineer-agent
    │
    ▼ first session: SessionStart hook auto-installs helper deps (oci/requests/websocket-client/cryptography)
    ▼ /aidp-engineer-bootstrap  → reads ~/.oci/config (DEFAULT), lists DataLakes/workspaces;
@@ -181,7 +190,7 @@ NL request → [ROUTER] classify intent → select skill
    ├─ data question (NL→SQL)?
    │     └─ match verified-queries.md?  yes→reuse validated SQL
    │        no→ground from catalog.md + semantic.md (names/FKs/value-dicts)
-   │           → python scripts/aidp_sql.py --cluster … --code "spark.sql(…)"
+   │           → python "$PLUGIN_DIR/scripts/aidp_sql.py" --cluster … --code "spark.sql(…)"
    │             (api_key→UPST or session-token reused; auto scratch notebook)
    │           → show result → cache new verified pair/mappings
    │

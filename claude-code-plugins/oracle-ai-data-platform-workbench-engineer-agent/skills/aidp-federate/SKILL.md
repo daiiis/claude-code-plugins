@@ -30,7 +30,7 @@ is via the bundled `scripts/aidp_sql.py` helper (no MCP, no AIDP_SESSION require
    join keys from `.aidp/semantic.md` / `.aidp/catalog.md` (don't guess). The helper mints a UPST from the
    api_key DEFAULT profile and auto-creates a scratch notebook on the target cluster:
    ```bash
-   python scripts/aidp_sql.py \
+   python "$PLUGIN_DIR/scripts/aidp_sql.py" \
      --region <region> --datalake <DATALAKE_OCID> --workspace <ws> --cluster <cluster-key> \
      --code "
    df_lake = spark.table('default.default.customer')

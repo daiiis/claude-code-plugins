@@ -36,7 +36,7 @@ e.g. `ai_generate('openai.gpt-5.4', 'Summarize this supplier spend: ...')`.
 
 ## How to run a cell
 ```bash
-python scripts/aidp_sql.py \
+python "$PLUGIN_DIR/scripts/aidp_sql.py" \
   --region <region> --datalake <DATALAKE_OCID> --workspace <ws> --cluster <cluster-key> \
   --code "<python/spark code>"
 ```
@@ -46,7 +46,7 @@ cell error. See [scripts/aidp_sql.py](../../scripts/aidp_sql.py) for full flags 
 
 ### Smoke test (do this first)
 ```bash
-python scripts/aidp_sql.py --region <region> --datalake <ocid> --workspace <ws> --cluster <key> \
+python "$PLUGIN_DIR/scripts/aidp_sql.py" --region <region> --datalake <ocid> --workspace <ws> --cluster <key> \
   --code "spark.sql(\"SELECT ai_generate('openai.gpt-5.4', 'hello')\").show(truncate=False)"
 ```
 

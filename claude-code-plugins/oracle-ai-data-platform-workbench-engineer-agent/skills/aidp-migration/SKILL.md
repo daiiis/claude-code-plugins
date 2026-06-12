@@ -20,7 +20,7 @@ is required.
    spark-connectors plugin + `aidp-federate`).
 3. **Port notebooks**: recreate notebooks in the workspace (`aidp-notebooks` / `aidp-workspace-files`),
    adapting platform-specifics (paths, `compute:///` defaultFS caveats, cluster/session APIs, Delta vs
-   other formats). Validate cells run with the bundled helper (`python scripts/aidp_sql.py … --code …`).
+   other formats). Validate cells run with the bundled helper (`python "$PLUGIN_DIR/scripts/aidp_sql.py" … --code …`).
 4. **Recreate jobs**: build the task DAG + schedule (`aidp-pipelines`), heeding the `clusterName`-UUID
    pitfall and `NOTEBOOK_TASK`/`dependsOn` shape.
 5. **Validate**: profile + quality-check migrated tables (`aidp-profiling-tables`, `aidp-data-quality`);
@@ -32,7 +32,7 @@ is required.
   AIDP REST API — see [references/oci-raw-request.md](../../references/oci-raw-request.md) and
   [references/no-mcp-rest-map.md](../../references/no-mcp-rest-map.md).
 - **Interactive Spark-SQL / cell execution** (validate ported cells, compare counts/aggregates) →
-  `python scripts/aidp_sql.py --region <r> --datalake <OCID> --workspace <ws> --cluster <key> --code <…>`.
+  `python "$PLUGIN_DIR/scripts/aidp_sql.py" --region <r> --datalake <OCID> --workspace <ws> --cluster <key> --code <…>`.
 
 ## Notes
 - Common AIDP gotchas to apply during porting: `compute:///` defaultFS (executors can't write the driver

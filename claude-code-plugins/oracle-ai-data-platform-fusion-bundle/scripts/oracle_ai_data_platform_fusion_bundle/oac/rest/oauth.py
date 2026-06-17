@@ -7,10 +7,9 @@ Per [Oracle's Authenticate doc](https://docs.oracle.com/en/cloud/paas/analytics-
 >  grant types, such as the Client Credentials grant type, to access Oracle
 >  Analytics Cloud REST APIs."
 
-Verified live 2026-05-01 (TC10h) against ``aidp-fusion-bundle-test-...analytics.ocp.oraclecloud.com``:
-``client_credentials`` tokens get HTTP 500 from the catalog backend (Jersey
-servlet NPEs trying to resolve the caller's home folder). Auth Code + PKCE
-tokens (``sub_type=user``) return HTTP 200.
+``client_credentials`` tokens are not sufficient for catalog access because
+OAC resolves REST calls in a user context. Auth Code + PKCE tokens
+(``sub_type=user``) are the supported path.
 
 This module supports two flows:
 
@@ -159,6 +158,18 @@ class OacOauthFlow:
             self._cached = self._auth_code_flow()
         self._persist(self._cached)
         return self._cached.access_token
+
+    def get_bundle(self, *, force_refresh: bool = False) -> TokenBundle:
+        """Return the full :class:`TokenBundle` (access + refresh + expiry).
+
+        Drives the same cache → refresh → interactive ladder as :meth:`get_token`,
+        but exposes the refresh token and absolute expiry so callers can re-serialize
+        the token into other formats (e.g. the OAC MCP connector's
+        ``{accessToken, refreshToken, expiresIn}`` shape — see :mod:`..mcp_token`).
+        """
+        self.get_token(force_refresh=force_refresh)
+        assert self._cached is not None  # get_token populates or raises
+        return self._cached
 
     # ------------------------------------------------------------ persistence
     def _persist(self, bundle: TokenBundle) -> None:

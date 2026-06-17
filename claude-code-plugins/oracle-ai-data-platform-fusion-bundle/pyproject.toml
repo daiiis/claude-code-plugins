@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "oracle-ai-data-platform-fusion-bundle"
 version = "0.1.0a0"
-description = "Productized Fusion ERP/HCM/SCM → Oracle AI Data Platform pipeline with curated BICC extracts, medallion bronze/silver/gold in Delta, conformed dimensions, gold marts, and Oracle Analytics Cloud workbooks installable via OAC REST API."
+description = "Productized Fusion ERP/HCM/SCM → Oracle AI Data Platform pipeline with curated BICC extracts, medallion bronze/silver/gold in Delta, conformed dimensions, gold marts, and MCP-native Oracle Analytics Cloud workbook authoring."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
@@ -37,7 +37,14 @@ dependencies = [
   "pyyaml>=6.0",
   "requests>=2.31",
   "oci>=2.130",
-  "rich>=13.0"
+  "rich>=13.0",
+  # P1.5ε — `aidp-fusion-bundle run` (no --inline) shells out to
+  # `python -m build` to materialize the plugin wheel for cluster-side
+  # install. The build backend MUST be available at runtime, not just
+  # in dev extras — operators install via `pip install
+  # oracle-ai-data-platform-fusion-bundle` and expect dispatch to work
+  # without separately installing the dev tooling.
+  "build>=1.0"
 ]
 
 [project.optional-dependencies]
@@ -50,7 +57,6 @@ test = [
 dev = [
   "ruff>=0.4",
   "mypy>=1.8",
-  "build>=1.0",
   "twine>=5.0"
 ]
 
@@ -67,12 +73,24 @@ where = ["scripts"]
 include = ["oracle_ai_data_platform_fusion_bundle*"]
 
 [tool.setuptools.package-data]
-oracle_ai_data_platform_fusion_bundle = ["py.typed"]
+oracle_ai_data_platform_fusion_bundle = [
+  "py.typed",
+  # Content packs ship as package data. The directory uses an underscore
+  # (Python identifier convention) even though pack `id:` values use dashes.
+  # See v2 plan §6.3 / ADR-0022 and docs/features/v2-phase-1-content-pack-schema/plan.md ("Resolved discrepancies").
+  "content_packs/**/*.yaml",
+  "content_packs/**/*.yml",
+  "content_packs/**/*.sql",
+  "content_packs/**/*.bar",
+  "content_packs/**/README.md",
+  # JSON Schema artifacts exported from Pydantic models (see schema/medallion_pack.py, schema/dashboard_pack.py).
+  "*.schema.json",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-  "live: requires live Fusion pod / AIDP workspace / OAC instance (gated by AIDP_FUSION_BUNDLE_INTEGRATION=1)"
+  "live: requires live Fusion pod / AIDP workspace / OAC instance (gated by AIDP_FUSION_BUNDLE_INTEGRATION=1)",
 ]
 
 [tool.ruff]

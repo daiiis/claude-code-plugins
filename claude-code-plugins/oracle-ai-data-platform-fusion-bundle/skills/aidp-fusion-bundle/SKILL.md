@@ -1,11 +1,16 @@
 ---
-description: Productized Fusion → Oracle AI Data Platform pipeline with curated BICC extracts (GL/AR/AP/PO/Suppliers/Items), bronze/silver/gold medallion in Delta, conformed dimensions (account/calendar/org/supplier/item), gold marts (AR-Aging/AP-Aging/GL-Balance/PO-Backlog/Supplier-Spend), and OAC workbooks installable via OAC REST API. Use when the user wants to load Fusion ERP/HCM/SCM data into AIDP, build a CFO dashboard from Fusion, set up a Fusion-backed lakehouse, install OAC dashboards for Fusion data, set up OAC MCP for natural-language Fusion analytics in Claude/Cline/Copilot, run BICC extracts incrementally, productize the Oracle blog "Bring Fusion Data into AIDP Workbench Using BICC", or extract Fusion via the saas-batch REST API. Triggers — "load Fusion into AIDP", "set up Fusion bronze layer", "build CFO dashboard from Fusion", "install OAC workbooks for Fusion", "run BICC extract", "Fusion AIDP medallion", "saas-batch Fusion extract".
+name: aidp-fusion-bundle
+description: Productized Fusion → Oracle AI Data Platform pipeline with curated BICC extracts (GL/AR/AP/PO/Suppliers/Items), bronze/silver/gold medallion in Delta, conformed dimensions (account/calendar/org/supplier/item), gold marts (AR-Aging/AP-Aging/GL-Balance/PO-Backlog/Supplier-Spend), and MCP-native OAC workbook authoring. Use when the user wants to load Fusion ERP/HCM/SCM data into AIDP, build a CFO dashboard from Fusion, set up a Fusion-backed lakehouse, create OAC datasets/workbooks over AIDP gold, set up OAC MCP for operator authoring or natural-language Fusion analytics in Claude/Cline/Copilot, run BICC extracts incrementally, productize the Oracle blog "Bring Fusion Data into AIDP Workbench Using BICC", or extract Fusion via the saas-batch REST API. Triggers — "load Fusion into AIDP", "set up Fusion bronze layer", "build CFO dashboard from Fusion", "create OAC workbook from Fusion", "run BICC extract", "Fusion AIDP medallion", "saas-batch Fusion extract".
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # `aidp-fusion-bundle` — Fusion ERP/HCM/SCM → AIDP, batteries included
 
-Productizes the official Oracle blog [Bring Fusion Data into Oracle AI Data Platform Workbench Using BICC](https://blogs.oracle.com/ai-data-platform/bring-fusion-data-into-oracle-ai-data-platform-workbench-using-bicc) plus the ateam companion [How to Extract Fusion Data using Oracle AI Data Platform](https://www.ateam-oracle.com/how-to-extract-fusion-data-using-oracle-ai-data-platform). One install, three commands, populated lakehouse + installed OAC dashboards.
+Productizes the official Oracle blog [Bring Fusion Data into Oracle AI Data Platform Workbench Using BICC](https://blogs.oracle.com/ai-data-platform/bring-fusion-data-into-oracle-ai-data-platform-workbench-using-bicc) plus the ateam companion [How to Extract Fusion Data using Oracle AI Data Platform](https://www.ateam-oracle.com/how-to-extract-fusion-data-using-oracle-ai-data-platform). The current path is: configure → connect OAC MCP → bootstrap → seed AIDP gold → advise the OAC dataset → use `oac-dataset-setup` for the governed manual OAC connection/dataset checkpoint → author the workbook via OAC MCP.
+
+When a run, bootstrap, validation, dashboard, or workbook flow reports an
+`AIDPF-*` code, start with [`aidpf-error-triage`](../aidpf-error-triage/SKILL.md).
+It is read-only and routes the failure to the recovery skill that owns it.
 
 ## When to use
 
@@ -38,6 +43,16 @@ Mirrors pdf1 §"What Can You Do Once the Data is in Oracle AI Data Platform":
 
 ## Quickstart
 
+> **Recommended route:** install the Claude Code plugin, open Claude Code from a
+> clean customer bundle directory such as `Workspace/demo-fusion-cfo/`, then
+> invoke [`aidp-fusion-autopilot`](../aidp-fusion-autopilot/SKILL.md) with the
+> dashboard goal. Autopilot installs/uses the bundled CLI if needed, scaffolds
+> customer files, and conducts the whole chain (configure → OAC MCP setup →
+> bootstrap → seed → advise → dataset → workbook → optional MCP chat), pausing
+> only for real decisions. Keep the customer directory separate from the plugin
+> source. The manual quickstart below is the step-by-step path autopilot
+> automates.
+
 1. **Install the CLI** on your laptop:
    ```bash
    pip install -e /path/to/oracle-ai-data-platform-fusion-bundle
@@ -49,58 +64,80 @@ Mirrors pdf1 §"What Can You Do Once the Data is in Oracle AI Data Platform":
    ```
    Edits `bundle.yaml` and `aidp.config.yaml` to match your environment (Fusion pod URL, AIDP workspace, OAC URL, OCI Vault refs for credentials).
 
-3. **Probe prerequisites against your pod**:
+3. **Connect operator OAC MCP early**:
+   ```bash
+   env -u OAC_URL -u OAC_MCP_USER -u OAC_MCP_PASSWORD -u OAC_ADMIN_USER -u OAC_ADMIN_PASSWORD \
+   aidp-fusion-bundle dashboard mcp-setup \
+     --connector-js <path to oac-mcp-connect.js>
+   ```
+   Run from the customer project directory. The `env -u ...` wrapper lets the
+   local `.env` provide the OAC values instead of any global shell profile.
+   Restart/reconnect Claude Code after this. Autopilot and workbook-authoring
+   need OAC MCP for `search_catalog`, `describe_data`, and
+   `save_catalog_content`. If setup happens mid-journey, autopilot writes
+   `.aidp/autopilot/resume.md`; resume with: "Resume the Fusion dashboard
+   workflow from .aidp/autopilot/resume.md."
+
+4. **Probe prerequisites and pin tenant variation**:
    ```bash
    aidp-fusion-bundle bootstrap --check-iam
    ```
-   Confirms BICC role, BICC External Storage profile (set in BICC console), AIDP catalog, IAM policies, Vault access.
+   Prefer to drive this conversationally? Use
+   [`aidp-fusion-bootstrap`](../aidp-fusion-bootstrap/SKILL.md). It confirms BICC role,
+   BICC External Storage profile (set in BICC console), AIDP catalog, IAM policies,
+   Vault access, and routes unresolved variation to `medallion-author`.
 
-4. **Run the orchestrator**:
+5. **Run the orchestrator**:
    ```bash
    aidp-fusion-bundle run --mode seed     # first-time full extract
    aidp-fusion-bundle run --mode incremental  # daily delta
    ```
+   Prefer to drive this conversationally? The [`aidp-fusion-seed`](../aidp-fusion-seed/SKILL.md)
+   skill turns "seed", "seed supplier_spend", "seed just bronze", or "resume
+   the seed" into the correct guarded `run --mode seed` invocation — it parses
+   the scope, auto-satisfies preconditions (validate / `/aidp-fusion-bootstrap` / cluster),
+   and **fail-closed-confirms** before overwriting populated silver/gold marts.
+   If the run reports an `AIDPF-*` code, use
+   [`aidpf-error-triage`](../aidpf-error-triage/SKILL.md) before choosing a
+   recovery path.
 
-5. **Install OAC dashboards** (one-time per OAC instance):
+6. **Build dashboards (MCP-native — the current path).** Ask
+   [`oac-dataset-advisor`](../oac-dataset-advisor/SKILL.md) what OAC dataset your
+   goal needs (grounded in the **live** AIDP gold layer), use
+   [`oac-dataset-setup`](../oac-dataset-setup/SKILL.md) to guide the manual AIDP
+   connection/dataset step and verify it through MCP, then have
+   [`workbook-authoring`](../workbook-authoring/SKILL.md) generate the
+   visualization(s) and write them via the OAC MCP `save_catalog_content` tool.
+   If the gold layer can't serve the goal,
+   [`mart-author`](../mart-author/SKILL.md) authors a new mart (then `use-pack` +
+   seed). *Legacy alternative:* the `.bar` snapshot `dashboard install` flow
+   (snapshot register + restore via OAC REST) still ships — see
+   `docs/oac_rest_api_setup.md` — but the MCP-native family above supersedes it
+   for authoring.
+
+7. **End users chat with the data** via OAC MCP. Set up the connector for
+   Claude Code (non-interactive **basic auth**, the path that actually works in
+   a terminal client):
    ```bash
-   # 5a. Upload bundle-vN.bar to your OCI Object Storage bucket. Use a folder
-   #     prefix in the object name; --bar-uri later passes the Oracle-documented
-   #     `file:///<folder>/<name>.bar` shape.
-   oci os object put --bucket-name aidp-fusion-bundle-bar \
-                     --file ./bundle-v0.1.0a0.bar \
-                     --name aidp-fusion-bundle/bundle-v0.1.0a0.bar
-
-   # 5b. (One-time, in OAC UI) Create the AIDP connection. Run the bundle
-   #     in --print-only mode to write the 6-key JSON, then upload it via
-   #     OAC UI: Data → Connections → Create → "Oracle AI Data Platform".
-   aidp-fusion-bundle dashboard install --target oac --oac-url ... --print-only
-
-   # 5c. Run the REST install (snapshot register + restore + poll). The bundle
-   #     uses GET /catalog?type=connections&search=<name> to find the existing
-   #     connection and skip the POST. Subsequent installs re-use it.
-   aidp-fusion-bundle dashboard install --target oac \
-     --oac-url https://oac.example.com \
-     --bar-bucket aidp-fusion-bundle-bar \
-     --bar-uri 'file:///aidp-fusion-bundle/bundle-v0.1.0a0.bar'
+   env -u OAC_URL -u OAC_MCP_USER -u OAC_MCP_PASSWORD -u OAC_ADMIN_USER -u OAC_ADMIN_PASSWORD \
+   aidp-fusion-bundle dashboard mcp-setup \
+     --connector-js <path to oac-mcp-connect.js>
    ```
-   Uses ONLY Oracle-documented public REST endpoints: `GET /catalog?type=connections&search=<name>` (precheck), `POST /catalog/connections` (skipped when precheck finds the existing connection — the realistic flow), `POST /snapshots`, `POST /system/actions/restoreSnapshot`, `GET /workRequests/{id}`. See `docs/oac_rest_api_setup.md` for the one-time IDCS confidential-app + Object Storage Resource Principal setup.
+   Then ask "what's our AR aging?" and watch MCP call
+   `search_catalog` → `describe_data` → `execute_logical_sql` against
+   `fusion_catalog.gold.*`. **Scope the OAC user to least privilege** — the v1.4
+   connector exposes catalog write/delete/ACL tools governed by that user's grants.
 
-6. **End users chat with the data** via OAC MCP. Print the MCP config snippet:
-   ```bash
-   aidp-fusion-bundle dashboard mcp-config
-   ```
-   Paste into `claude_desktop_config.json` (or Claude Code / Cline / Copilot equivalent), restart the AI client. Then ask "what's our AR aging?" and watch MCP call `discoverData` → `describeData` → `executeLogicalSQL` against `fusion_catalog.gold.ar_aging`.
+## Key gotchas
 
-## Key gotchas (live-validated where ✅)
-
-- **BICC role required** — Fusion user must hold `BIA_ADMINISTRATOR_DUTY` *or* `ORA_ASM_APPLICATION_IMPLEMENTATION_ADMIN_ABSTRACT`. Without it, `/biacm/api/v[12]/*` endpoints 302-redirect to IDCS. Bootstrap probes for this. (✅ Casey.Brown demo pod: BIAdmin granted; works.)
+- **BICC role required** — Fusion user must hold `BIA_ADMINISTRATOR_DUTY` *or* `ORA_ASM_APPLICATION_IMPLEMENTATION_ADMIN_ABSTRACT`. Without it, `/biacm/api/v[12]/*` endpoints 302-redirect to IDCS. Bootstrap probes for this.
 - **BICC External Storage profile** — must be configured **once in the BICC console** (admin task: BICC Console → Configure External Storage → OCI Object Storage Connection tab → bucket name + namespace + region + OCI username + auth token → Test Connection → Save). The `fusion.external.storage` Spark option references this BICC profile name. **There is no parallel AIDP-side registration.** Bundle does not provision the BICC profile; bootstrap verifies it exists.
 - **First extract is slow** — BICC builds a full snapshot on first call; subsequent runs use `fusion.initial.extract-date` for incremental.
 - **499 row/page hard cap on Fusion REST** (per MOS Doc ID 2429019.1) — bundle's REST fallback enforces this; anything >5k rows must use BICC.
-- **OAC MCP is read-only** — it cannot create workbooks or register data sources. Bundle uses **OAC REST API** for write operations; MCP is for end-user chat consumption only.
-- **`POST /catalog/connections` REST validator does not bless AIDP `idljdbc`** — Oracle's validator falls through to generic Oracle DB schemas requiring `serviceName`/`password`/`connectionString`. The realistic flow is therefore: customer creates the connection via OAC UI once (using the 6-key JSON written by `--print-only`), then `dashboard install` re-uses it via the precheck on subsequent runs. (✅ Live-validated TC10h-4, 2026-05-03 against disposable OAC1.)
-- **Snapshot BAR URI shape is `file:///<folder>/<name>.bar`** — NOT `oci://...`, NOT bare object name, NOT the OCI Object Storage HTTPS URL. None of the seven URI variants tried during TC10h were correct. Verified live TC10h-3.
-- **OAC catalog browse needs `search=*`** — `GET /catalog?type=connections` (no search) returns a single-element TypeInfo header (`[{"type":"connections"}]`), NOT the actual list. Bundle's `list_connections` defaults `search="*"` so the precheck works. (Caught + fixed during TC10h-3 live validation.)
+- **OAC MCP (v1.4) is NOT read-only** — it exposes catalog **write** tools too. The bundle authors workbooks via `save_catalog_content` (live-verified 2026-06-15: created `gold_balance_2viz` on a real OAC). It still **cannot create datasets** (no create-dataset tool — dataset modeling is an OAC UI step), and the write/delete/ACL tools run with the connecting user's grants → use a least-privilege MCP user. (Supersedes the earlier "MCP is read-only" note.)
+- **`POST /catalog/connections` REST validator does not bless AIDP `idljdbc`** — Oracle's validator falls through to generic Oracle DB schemas requiring `serviceName`/`password`/`connectionString`. The realistic flow is therefore: customer creates the connection via OAC UI once (using the 6-key JSON written by `--print-only`). Legacy `dashboard install` can re-use that connection via the precheck on subsequent `.bar` snapshot deployments.
+- **Snapshot BAR URI shape is `file:///<folder>/<name>.bar`** — NOT `oci://...`, NOT bare object name, NOT the OCI Object Storage HTTPS URL.
+- **OAC catalog browse needs `search=*`** — `GET /catalog?type=connections` (no search) returns a single-element TypeInfo header (`[{"type":"connections"}]`), NOT the actual list. Bundle's `list_connections` defaults `search="*"` so the precheck works.
 - **Use ExtractPVOs for bulk, NOT OTBI reporting PVOs** — pdf1 Pro Tip; bundle's catalog refuses OTBI PVOs with a clear warning.
 
 ## References

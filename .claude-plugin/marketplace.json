@@ -5,7 +5,7 @@
     },
     "metadata": {
         "version": "0.9.0",
-        "description": "Development mirror of oracle-samples for Claude Code plugins for Oracle AI Data Platform (AIDP) Workbench. Bundles the Engineer Agent (oracle-ai-data-platform-workbench-engineer-agent), the Spark connectors plugin (oracle-ai-data-platform-workbench-spark-connectors), the workbench router (oracle-ai-data-platform-workbench-router), the Databricks Migrator (oracle-ai-data-platform-workbench-databricks-migrator), and the Fusion bundle (oracle-ai-data-platform-fusion-bundle). Plugins live under claude-code-plugins/<plugin-name>/, mirroring the layout in oracle-samples/oracle-aidp-samples/ai/claude-code-plugins/."
+        "description": "Development mirror of oracle-samples for Claude Code plugins for Oracle AI Data Platform (AIDP) Workbench. Bundles the Engineer Agent (oracle-ai-data-platform-workbench-engineer-agent), the Spark connectors plugin (oracle-ai-data-platform-workbench-spark-connectors), the Databricks Migrator (oracle-ai-data-platform-workbench-databricks-migrator), and the Fusion bundle (oracle-ai-data-platform-fusion-bundle). Plugins live under claude-code-plugins/<plugin-name>/, mirroring the layout in oracle-samples/oracle-aidp-samples/ai/claude-code-plugins/."
     },
     "plugins": [
         {
@@ -106,29 +106,6 @@
                 "oci",
                 "lakehouse",
                 "rest-api"
-            ]
-        },
-        {
-            "name": "oracle-ai-data-platform-workbench-router",
-            "description": "[ORACLE-INTERNAL \u2014 Not installable outside Oracle; listed for completeness only.] Complete AIDP toolkit. Routes AIDP prompts across 5 execution surfaces (MCP / REST / Python SDK / OCI CLI / WebSocket Jupyter Wire). 8 skills, hook-driven intent detection, RO/RW/DEPLOY security envelopes, JSONL audit log, prerequisite bootstrap, WebSocket cell-execution helper. Requires an AIDP MCP server (Oracle-internal preview, not yet GA). Additive to AIDP \u2014 no DFL surface, no FDI/OAC/OTBI/BIP positioning.",
-            "version": "0.3.0",
-            "source": "./claude-code-plugins/oracle-ai-data-platform-workbench-router/",
-            "category": "development",
-            "keywords": [
-                "oracle",
-                "aidp",
-                "ai-data-platform",
-                "router",
-                "auto-routing",
-                "mcp",
-                "rest",
-                "sdk",
-                "oci-cli",
-                "websocket",
-                "jupyter",
-                "lakehouse",
-                "agent",
-                "workbench"
             ]
         },
         {

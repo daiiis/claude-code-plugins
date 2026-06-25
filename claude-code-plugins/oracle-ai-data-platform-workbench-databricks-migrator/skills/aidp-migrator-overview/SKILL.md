@@ -52,13 +52,13 @@ schemas + table locations exist when migrated notebooks try to read them):
 
 ## What the user must have set up before any of this
 
-This plugin is **knowledge-only**. The actual migrator is a Python toolkit the user clones separately. Before any skill in this plugin can do real work, the user needs:
+This plugin is **self-contained** — the full migrator engine ships bundled under `${CLAUDE_PLUGIN_ROOT}/engine/`. Before any skill in this plugin can do real work, the user needs:
 
-1. **Migrator repo cloned locally.** (Customer Success or FDE supplies the URL.) Skill [`aidp-migrator-bootstrap`](../aidp-migrator-bootstrap/SKILL.md) walks through this.
+1. **Engine Python deps installed.** One-time `pip install -r ${CLAUDE_PLUGIN_ROOT}/engine/requirements.txt`. Skill [`aidp-migrator-bootstrap`](../aidp-migrator-bootstrap/SKILL.md) walks through this and the rest of these checks.
 2. **`~/.oci/config`** with either an `api_key` profile (unattended) or session-token profile (interactive).
-3. **An ACTIVE AIDP cluster.** The migrator's Pass-2 requires a live cluster — the WebSocket execute path. If the cluster is stopped, ask the user to start it via AIDP console before invoking [`aidp-migrate-job`](../aidp-migrate-job/SKILL.md).
-4. **`ANTHROPIC_API_KEY`** in the environment. The migrator uses Claude with tool use for every cell rewrite. Without this key the Pass-2 loop won't run.
-5. **An `env-coords.md` file** — see [references/env-coords.md](../../references/env-coords.md). The customer fills in their DataLake OCID, workspace UUID, cluster ID, AIDP base URL, OCI profile name once; every other skill threads these through.
+3. **An ACTIVE AIDP cluster.** The engine's Pass-2 requires a live cluster — the WebSocket execute path. If the cluster is stopped, ask the user to start it via AIDP console before invoking [`aidp-migrate-job`](../aidp-migrate-job/SKILL.md).
+4. **`ANTHROPIC_API_KEY`** in the environment. The engine uses Claude with tool use for every cell rewrite. Without this key the Pass-2 loop won't run.
+5. **An `env-coords.md` file** — see [references/env-coords.template.md](../../references/env-coords.template.md). The customer fills in their DataLake OCID, workspace UUID, cluster ID, AIDP base URL, OCI profile name once; every other skill threads these through.
 
 ## What this plugin does NOT do
 
@@ -72,7 +72,7 @@ This plugin is **knowledge-only**. The actual migrator is a Python toolkit the u
 - [`references/cli-map.md`](../../references/cli-map.md) — every migrator CLI entrypoint mapped to its purpose.
 - [`references/gotchas.md`](../../references/gotchas.md) — 15 Databricks → AIDP gotchas with fix recipes.
 - [`references/ddl-rewrite-rules.md`](../../references/ddl-rewrite-rules.md) — the 18 DDL rewrite rules.
-- [`references/env-coords.md`](../../references/env-coords.md) — the scaffold every skill threads from.
+- [`references/env-coords.template.md`](../../references/env-coords.template.md) — the scaffold every skill threads from.
 
 ## Order of operations for a fresh migration
 

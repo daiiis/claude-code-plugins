@@ -1,6 +1,6 @@
 # DDL Rewrite Rules — Databricks → AIDP
 
-The migrator's `scripts/catalog_ddl_rewriter.py` applies **18 rules** when porting Unity Catalog / HMS DDL to AIDP. This document is the reference; the actual implementation is `rewrite_table_ddl()` + `schema_create_sql()` in the migrator repo.
+The migrator's `${CLAUDE_PLUGIN_ROOT}/engine/scripts/catalog_ddl_rewriter.py` applies **18 rules** when porting Unity Catalog / HMS DDL to AIDP. This document is the reference; the actual implementation is `rewrite_table_ddl()` + `schema_create_sql()` in the migrator repo.
 
 Each rule below shows the **input shape** (what Databricks emits) and the **output shape** (what AIDP accepts).
 
@@ -44,7 +44,7 @@ CREATE TABLE <schema>.<table> ... LOCATION 's3://<bucket>/<path>'
 CREATE TABLE <schema>.<table> ... LOCATION 'oci://<bucket>@<namespace>/<path>'
 ```
 
-Bucket → namespace mapping comes from the customer's `bucket_mapping.json` (see [`aidp-bucket-mapping`](../skills/aidp-bucket-mapping/SKILL.md)).
+Bucket → namespace mapping comes from your `bucket_mapping.json` (see [`aidp-bucket-mapping`](../skills/aidp-bucket-mapping/SKILL.md)).
 
 ### Rule 4: Reject when bucket not in mapping
 
@@ -247,7 +247,7 @@ Note: the COMMENT clause is preserved on `CREATE TABLE` (only `CREATE SCHEMA` st
 `migrate_catalog.py --dry-run` prints each statement's BEFORE → AFTER. Pipe to a file and review before the live replay:
 
 ```bash
-python3 scripts/migrate_catalog.py \
+python3 ${CLAUDE_PLUGIN_ROOT}/engine/scripts/migrate_catalog.py \
   --pack reports/catalog_pack.json \
   --dry-run > /tmp/catalog_rewrite_preview.txt
 less /tmp/catalog_rewrite_preview.txt

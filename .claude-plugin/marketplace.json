@@ -4,8 +4,8 @@
         "name": "Ahmed Awan"
     },
     "metadata": {
-        "version": "0.8.0",
-        "description": "Personal development marketplace hosting Claude Code plugins for Oracle AI Data Platform (AIDP) Workbench. Bundles the Engineer Agent (oracle-ai-data-platform-workbench-engineer-agent), the Spark connectors plugin (oracle-ai-data-platform-workbench-spark-connectors), the workbench router (oracle-ai-data-platform-workbench-router), and the Databricks Migrator (oracle-ai-data-platform-workbench-databricks-migrator), and the Fusion bundle (oracle-ai-data-platform-fusion-bundle). Plugins live under claude-code-plugins/<plugin-name>/, mirroring the layout in oracle-samples/oracle-aidp-samples/ai/claude-code-plugins/."
+        "version": "0.9.0",
+        "description": "Development mirror of oracle-samples for Claude Code plugins for Oracle AI Data Platform (AIDP) Workbench. Bundles the Engineer Agent (oracle-ai-data-platform-workbench-engineer-agent), the Spark connectors plugin (oracle-ai-data-platform-workbench-spark-connectors), the workbench router (oracle-ai-data-platform-workbench-router), the Databricks Migrator (oracle-ai-data-platform-workbench-databricks-migrator), and the Fusion bundle (oracle-ai-data-platform-fusion-bundle). Plugins live under claude-code-plugins/<plugin-name>/, mirroring the layout in oracle-samples/oracle-aidp-samples/ai/claude-code-plugins/."
     },
     "plugins": [
         {
@@ -70,8 +70,8 @@
         },
         {
             "name": "oracle-ai-data-platform-workbench-databricks-migrator",
-            "description": "Drive the Oracle AI Data Platform (AIDP) Databricks Migration Toolkit in natural language. Teaches Claude how to plan and execute an automated end-to-end migration of Databricks (Unity Catalog / HMS) notebooks, jobs, schedules, and catalog DDL onto AIDP \u2014 Pass-1 dependency resolution + Pass-2 cell-by-cell execute/verify/fix on a live AIDP cluster using Claude with tool use. Covers job_migrate.py orchestration, catalog migration (18 DDL rewrite rules: 3-part\u21922-part name flatten, s3://\u2192oci:// via bucket-map, source-format preserved with delta.* property scrub), workflow DAG manifest building, fixup_cell rewind, pre-migration data-availability checks, write-redirect sandbox schema, and the acceptance-contract pattern for batch/streaming convergence. Bundles 10 skills, 4 slash commands, 2 reviewer agents, and 5 reference docs covering the catalog DDL rules, common Databricks\u2192AIDP gotchas (FUSE consistency, /Volumes mount, builtins.sum shadow, %run trailing slash, line-magic guard, Python 3.12 f-string strictness), JOB_REPORT.md parsing, and an env-coords scaffold customers fill in. Knowledge-only plugin \u2014 assumes the migrator source is checked out locally.",
-            "version": "0.1.0",
+            "description": "Drive the Oracle AI Data Platform (AIDP) Databricks Migration Toolkit in natural language. Teaches Claude how to plan and execute an automated end-to-end migration of Databricks (Unity Catalog / HMS) notebooks, jobs, schedules, and catalog DDL onto AIDP \u2014 Pass-1 dependency resolution + Pass-2 cell-by-cell execute/verify/fix on a live AIDP cluster using Claude with tool use. Covers job_migrate.py orchestration, catalog migration (18 DDL rewrite rules: 3-part\u21922-part name flatten, s3://\u2192oci:// via bucket-map, source-format preserved with delta.* property scrub), workflow DAG manifest building, fixup_cell rewind, pre-migration data-availability checks, write-redirect sandbox schema, and the acceptance-contract pattern for batch/streaming convergence. Bundles 10 skills, 4 slash commands, 2 reviewer agents, and 4 reference docs + an env-coords template covering the catalog DDL rules, common Databricks\u2192AIDP gotchas (FUSE consistency, /Volumes mount, builtins.sum shadow, %run trailing slash, line-magic guard, Python 3.12 f-string strictness), JOB_REPORT.md parsing, and an env-coords scaffold customers fill in. Self-contained plugin \u2014 the migrator engine ships bundled under engine/.",
+            "version": "0.2.0",
             "source": "./claude-code-plugins/oracle-ai-data-platform-workbench-databricks-migrator/",
             "category": "data",
             "keywords": [
@@ -110,7 +110,7 @@
         },
         {
             "name": "oracle-ai-data-platform-workbench-router",
-            "description": "[ORACLE-INTERNAL] Complete AIDP toolkit. Routes AIDP prompts across 5 execution surfaces (MCP / REST / Python SDK / OCI CLI / WebSocket Jupyter Wire). 8 skills, hook-driven intent detection, RO/RW/DEPLOY security envelopes, JSONL audit log, prerequisite bootstrap, WebSocket cell-execution helper. Requires an AIDP MCP server (Oracle-internal preview, not yet GA). Additive to AIDP \u2014 no DFL surface, no FDI/OAC/OTBI/BIP positioning.",
+            "description": "[ORACLE-INTERNAL \u2014 Not installable outside Oracle; listed for completeness only.] Complete AIDP toolkit. Routes AIDP prompts across 5 execution surfaces (MCP / REST / Python SDK / OCI CLI / WebSocket Jupyter Wire). 8 skills, hook-driven intent detection, RO/RW/DEPLOY security envelopes, JSONL audit log, prerequisite bootstrap, WebSocket cell-execution helper. Requires an AIDP MCP server (Oracle-internal preview, not yet GA). Additive to AIDP \u2014 no DFL surface, no FDI/OAC/OTBI/BIP positioning.",
             "version": "0.3.0",
             "source": "./claude-code-plugins/oracle-ai-data-platform-workbench-router/",
             "category": "development",

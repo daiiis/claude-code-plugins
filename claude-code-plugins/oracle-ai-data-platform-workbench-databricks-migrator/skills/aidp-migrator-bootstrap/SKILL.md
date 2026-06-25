@@ -1,6 +1,6 @@
 ---
 name: aidp-migrator-bootstrap
-description: One-shot environment readiness check for the Oracle AIDP Databricks migrator. Verifies Python deps, OCI auth, AIDP cluster reachability, and the customer's env-coords file. Use the first time the user invokes the migrator on a workstation, or when any other skill fails with an auth / connectivity error.
+description: One-shot environment readiness check for the Oracle AIDP Databricks migrator. Verifies Python deps, OCI auth, AIDP cluster reachability, and your env-coords file. Use the first time the user invokes the migrator on a workstation, or when any other skill fails with an auth / connectivity error.
 ---
 
 # `aidp-migrator-bootstrap` — environment readiness check
@@ -26,16 +26,17 @@ Before any check below works, the user MUST have an `env-coords.md` (or any plai
 | OCI profile name | `<your-profile>` (e.g. the section name in `~/.oci/config`) |
 | Output workspace path | `Shared/aidp-migration-tool-output/` (or your team's path) |
 
-Save these into a `env-coords.md` file at the project root, gitignored. Every other skill in this plugin threads these through verbatim. See [references/env-coords.md](../../references/env-coords.md) for a complete scaffold.
+Save these into a `env-coords.md` file at the project root, gitignored. Every other skill in this plugin threads these through verbatim. See [references/env-coords.template.md](../../references/env-coords.template.md) for a complete scaffold.
 
 ## Step-by-step
 
 ### 1. Python prereqs
 
+The migrator engine ships bundled with this plugin under `${CLAUDE_PLUGIN_ROOT}/engine/`. Install its Python dependencies once:
+
 ```bash
-cd <migrator-repo-root>
 python3 --version          # 3.10+
-pip install -r requirements.txt
+pip install -r ${CLAUDE_PLUGIN_ROOT}/engine/requirements.txt
 ```
 
 Expected packages: `oci`, `requests`, `websocket-client`, `anthropic`, `cryptography`. If any is missing, install + retry.
@@ -80,7 +81,7 @@ Expect `Active`. Acceptable transient states are `Starting`, `Updating`. If `Sto
 > ```python
 > import oci, requests
 >
-> # Fill these from env-coords.md (see references/env-coords.md):
+> # Fill these from env-coords.md (see references/env-coords.template.md):
 > profile = "<your-profile-name>"
 > base    = "<AIDP_BASE>"          # e.g. https://aidp.<region>.oci.oraclecloud.com/20240831
 > lake    = "<DATALAKE_OCID>"
@@ -117,8 +118,8 @@ print(r.status_code, r.text[:200])
 ### 6. Migrator pyc compile sanity
 
 ```bash
-python3 -m py_compile scripts/build_dag.py scripts/check_data_availability.py \
-                      scripts/job_migrate.py scripts/migrate_catalog.py
+python3 -m py_compile ${CLAUDE_PLUGIN_ROOT}/engine/scripts/build_dag.py ${CLAUDE_PLUGIN_ROOT}/engine/scripts/check_data_availability.py \
+                      ${CLAUDE_PLUGIN_ROOT}/engine/scripts/job_migrate.py ${CLAUDE_PLUGIN_ROOT}/engine/scripts/migrate_catalog.py
 ```
 
 Should be silent. If a Python-version mismatch is reported, the user is on the wrong interpreter.

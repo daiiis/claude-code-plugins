@@ -20,6 +20,7 @@ the round-2 initial-onboarding mechanism-stamping requirement.
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -216,9 +217,16 @@ def bundle_dir_with_skill_overlay(
         encoding="utf-8",
     )
 
-    # Symlink the starter pack as the base pack (sibling discovery).
+    # Make the starter pack discoverable as the sibling base pack. A symlink
+    # is the lightweight default, but Windows refuses os.symlink without
+    # Developer Mode / SeCreateSymbolicLink privilege (OSError WinError 1314).
+    # Sibling discovery only reads the tree, so a recursive copy is an
+    # equivalent fallback that keeps the suite portable.
     base_link = tmp_path / "overlays" / "fusion-finance-starter@0.1.0"
-    base_link.symlink_to(STARTER_PACK)
+    try:
+        base_link.symlink_to(STARTER_PACK)
+    except (OSError, NotImplementedError):
+        shutil.copytree(STARTER_PACK, base_link)
 
     bundle_yaml = tmp_path / "bundle.yaml"
     bundle_yaml.write_text(

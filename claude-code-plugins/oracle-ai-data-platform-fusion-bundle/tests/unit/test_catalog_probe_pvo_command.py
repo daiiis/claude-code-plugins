@@ -96,6 +96,15 @@ datasets: []
 class TestProbePvoEmitsLoadCleanYaml:
     """End-to-end: invoke the emitter, parse the YAML, validate via NodeYaml."""
 
+    @pytest.fixture(autouse=True)
+    def _require_pyspark(self) -> None:
+        # These tests ``patch("pyspark.sql.SparkSession", ...)``, which forces
+        # a real ``import pyspark`` inside ``mock``'s attribute resolver. On a
+        # box without pyspark that raises ModuleNotFoundError at patch-enter
+        # time. Skip the whole class when pyspark is unavailable, matching the
+        # guard in test_state_phase2_real_spark.py / test_quality_runner.py.
+        pytest.importorskip("pyspark")
+
     def test_emits_full_yaml_with_audit_cols(
         self, tmp_path: Path, minimal_bundle: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

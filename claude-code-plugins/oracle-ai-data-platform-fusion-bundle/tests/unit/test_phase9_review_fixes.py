@@ -856,16 +856,18 @@ environments:
             f"dispatch_via_rest; got {captured.get('strict_scope')!r}"
         )
 
-    def test_build_notebook_emits_strict_scope_literal_in_run_cell(self):
+    def test_build_notebook_emits_strict_scope_literal_in_run_cell(self, tmp_path):
         """build_notebook(strict_scope=True) must emit the literal
         ``strict_scope=True`` inside the generated orchestrator.run(...)
         call so the cluster honours the operator's opt-out."""
-        import pathlib
         from oracle_ai_data_platform_fusion_bundle.dispatch.notebook_builder import (
             build_notebook,
         )
 
-        wheel = pathlib.Path("/tmp/strict-scope-test.whl")
+        # tmp_path, not a hardcoded "/tmp/..." — on Windows the POSIX literal
+        # resolves to "\tmp\..." on the current drive, which doesn't exist
+        # (FileNotFoundError).
+        wheel = tmp_path / "strict-scope-test.whl"
         wheel.write_bytes(b"PK\x03\x04 fake")
 
         nb_true = build_notebook(
